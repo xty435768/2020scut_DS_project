@@ -16,5 +16,40 @@ namespace doomsday_scut
         {
             InitializeComponent();
         }
+
+        private void new_game_Click(object sender, EventArgs e)
+        {
+            Game g = new Game();
+            g.Show();
+            g.Draw();
+            this.Hide();
+        }
+
+        private void help_about_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void exit_Click(object sender, EventArgs e)
+        {
+            if (MessageBox.Show("Are you sure to exit?", "Exit", MessageBoxButtons.YesNo) == System.Windows.Forms.DialogResult.Yes)
+            {
+                Dispose();
+                Application.Exit();
+            }
+        }
+
+        private void Form1_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            if (MessageBox.Show("Are you sure to exit?", "Exit", MessageBoxButtons.YesNo) == System.Windows.Forms.DialogResult.No)
+            {
+                e.Cancel = true;
+            }
+            else
+            {
+                Dispose();
+                Application.Exit();
+            }
+        }
     }
 }

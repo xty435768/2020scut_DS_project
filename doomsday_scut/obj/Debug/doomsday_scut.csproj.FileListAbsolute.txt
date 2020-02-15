@@ -1,0 +1,11 @@
+E:\学习资料\数据结构\Project\tomb_raider\doomsday_scut\bin\Debug\doomsday_scut.exe.config
+E:\学习资料\数据结构\Project\tomb_raider\doomsday_scut\bin\Debug\doomsday_scut.exe
+E:\学习资料\数据结构\Project\tomb_raider\doomsday_scut\bin\Debug\doomsday_scut.pdb
+E:\学习资料\数据结构\Project\tomb_raider\doomsday_scut\obj\Debug\doomsday_scut.csprojAssemblyReference.cache
+E:\学习资料\数据结构\Project\tomb_raider\doomsday_scut\obj\Debug\doomsday_scut.Form1.resources
+E:\学习资料\数据结构\Project\tomb_raider\doomsday_scut\obj\Debug\doomsday_scut.Properties.Resources.resources
+E:\学习资料\数据结构\Project\tomb_raider\doomsday_scut\obj\Debug\doomsday_scut.csproj.GenerateResource.cache
+E:\学习资料\数据结构\Project\tomb_raider\doomsday_scut\obj\Debug\doomsday_scut.csproj.CoreCompileInputs.cache
+E:\学习资料\数据结构\Project\tomb_raider\doomsday_scut\obj\Debug\doomsday_scut.exe
+E:\学习资料\数据结构\Project\tomb_raider\doomsday_scut\obj\Debug\doomsday_scut.pdb
+E:\学习资料\数据结构\Project\tomb_raider\doomsday_scut\obj\Debug\doomsday_scut.Game.resources
