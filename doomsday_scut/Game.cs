@@ -15,6 +15,7 @@ namespace doomsday_scut
         int x = 50, y = 50;
         int face = 1;
         int animation_ctrl = 0;
+        int move_step = 15;
         bool start = true;
         Bitmap fighter2 = new Bitmap(Properties.Resources._fighter2);
         public Game()
@@ -27,10 +28,10 @@ namespace doomsday_scut
         private void Game_KeyDown(object sender, KeyEventArgs e)
         {
             start = false;
-            if (e.KeyCode == Keys.Up) { y -= 5; face = 4; }
-            if (e.KeyCode == Keys.Down) { y += 5; face = 1; }
-            if (e.KeyCode == Keys.Left) { x -= 5; face = 2; }
-            if (e.KeyCode == Keys.Right) { x += 5; face = 3; }
+            if (e.KeyCode == Keys.Up) { y -= move_step; face = 4; }
+            if (e.KeyCode == Keys.Down) { y += move_step; face = 1; }
+            if (e.KeyCode == Keys.Left) { x -= move_step; face = 2; }
+            if (e.KeyCode == Keys.Right) { x += move_step; face = 3; }
             Draw();
         }
 
