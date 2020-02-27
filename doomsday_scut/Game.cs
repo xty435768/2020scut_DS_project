@@ -46,7 +46,7 @@ namespace doomsday_scut
         private void Game_KeyDown(object sender, KeyEventArgs e)
         {
             start = false;
-            Point p = Player.key_ctrl(player,e);
+            Point p = Player.key_ctrl(player, map, e);
             Draw();
             //MessageBox.Show(Convert.ToString(p.X) + "," + Convert.ToString(p.Y));
             Text = "Game  坐标表示：" + Convert.ToString(p.X) + "," + Convert.ToString(p.Y) ;
@@ -54,11 +54,7 @@ namespace doomsday_scut
 
         private void Game_Load(object sender, EventArgs e)
         {
-            
-            player[0] = new Player();
-            player[0].figure = new Bitmap(Properties.Resources._fighter2);
-            player[0].figure.SetResolution(resolution_value, resolution_value);
-            player[0].is_active = 1;
+
             ProcessBar myprocessbar = new ProcessBar("Loading...", "Loading maps...");
             myprocessbar.Show();
             for (int i = 0; i < 10; i++)
@@ -69,6 +65,11 @@ namespace doomsday_scut
             }
             myprocessbar.Hide();
 
+            player[0] = new Player();
+            player[0].figure = new Bitmap(Properties.Resources._fighter2);
+            player[0].figure.SetResolution(resolution_value, resolution_value);
+            player[0].is_active = 1;
+            
             Draw();
         }
         
@@ -107,8 +108,8 @@ namespace doomsday_scut
             //Class of PCC Role
             public int x = 48;                      //x coordinate
             public int y = 48;                      //y coordinate
-            public int coordinate_x = -1;
-            public int coordinate_y = -1;
+            public int coordinate_x = 1;
+            public int coordinate_y = 2;
             public int face = 1;
             public int anm_frame = 0;               //current animation frame
             public long last_walk_time = 0;         //record last moving time point
@@ -124,7 +125,7 @@ namespace doomsday_scut
                 figure = new Bitmap(Properties.Resources._fighter2);
                 figure.SetResolution(resolution_value, resolution_value);
             }
-            public static Point key_ctrl(Player[] player, KeyEventArgs e)
+            public static Point key_ctrl(Player[] player, Map[] map, KeyEventArgs e)
             {
                 Point nullpoint = new Point(-1, -1);
                 Player p = player[current_player];
@@ -142,10 +143,10 @@ namespace doomsday_scut
                     return nullpoint;
 
                 //move
-                if (e.KeyCode == Keys.Up) { p.y -= p.speed; }
-                else if (e.KeyCode == Keys.Down) { p.y += p.speed; }
-                else if (e.KeyCode == Keys.Left) { p.x -= p.speed; }
-                else if (e.KeyCode == Keys.Right) { p.x += p.speed; }
+                if (e.KeyCode == Keys.Up && Map.can_through(map,p.coordinate_x,p.coordinate_y - 1)) { p.y -= p.speed; }
+                else if (e.KeyCode == Keys.Down && Map.can_through(map, p.coordinate_x, p.coordinate_y + 1)) { p.y += p.speed; }
+                else if (e.KeyCode == Keys.Left && Map.can_through(map, p.coordinate_x - 1, p.coordinate_y)) { p.x -= p.speed; }
+                else if (e.KeyCode == Keys.Right && Map.can_through(map, p.coordinate_x + 1, p.coordinate_y)) { p.x += p.speed; }
                 else return nullpoint;
 
                 //animation frame
@@ -196,7 +197,7 @@ namespace doomsday_scut
 
             public static void key_ctrl_up(Player[] player, KeyEventArgs e)
             {
-                //this function currect the face of the figure when the key is up
+                //this function correct the face of the figure when the key is up
                 Player p = player[current_player];
                 //animation frame
                 p.anm_frame = 0;
@@ -235,7 +236,7 @@ namespace doomsday_scut
             public static byte[] roadValue;
             public static Rectangle wall_r = new Rectangle(64, 0, 32, 32);
             public static Rectangle road_r = new Rectangle(0, 0, 32, 32);
-            public int [,] mapdata_matrix;
+            public string mapdata_string;
             public int map_width;
             public int map_height;
             public int this_map_id;
@@ -256,7 +257,7 @@ namespace doomsday_scut
                 SQLiteDataReader dReader = cmd.ExecuteReader();
                 DataTable dTable = new DataTable();
                 dTable.Load(dReader);
-                //string mapdata_string = dTable.Rows[0]["data"].ToString();
+                mapdata_string = dTable.Rows[0]["data"].ToString();
                 map_width = Convert.ToInt32(dTable.Rows[0]["width"].ToString());
                 map_height = Convert.ToInt32(dTable.Rows[0]["height"].ToString());
                 cn.Close();
@@ -380,7 +381,20 @@ namespace doomsday_scut
                 current_map = newindex;
                 Player.set_position(player, x, y, face);
             }
+            public static bool can_through(Map[] map,int x,int y)
+            {
+                Map m = map[current_map];
+                if (x < 0) return false;
+                else if (x >= m.map_width) return false;
+                else if (y < 0) return false;
+                else if (y >= m.map_height) return false;
 
+                if (m.mapdata_string[y * m.map_width + x] == '1')
+                    return false;
+                else
+                    return true;
+                
+            }
             public void WriteMessage(string msg)
             {
                 using (FileStream fs = new FileStream(@"e:\test.txt", FileMode.OpenOrCreate, FileAccess.Write))
