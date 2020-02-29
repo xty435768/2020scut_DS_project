@@ -19,7 +19,8 @@ namespace doomsday_scut
         
         Player[] player = new Player[1];        //PCC数量暂定一个
         Map[] map = new Map[10];
-        int animation_ctrl = 0;
+        Npc[] npc = new Npc[1];
+        
         bool start = true;
         static int resolution_value = 64;
         static double resolution_rate = 96.0 / resolution_value;   //只改分母
@@ -45,10 +46,7 @@ namespace doomsday_scut
 
         private void Game_KeyDown(object sender, KeyEventArgs e)
         {
-            start = false;
             Point p = Player.key_ctrl(player, map, e);
-            Draw();
-            //MessageBox.Show(Convert.ToString(p.X) + "," + Convert.ToString(p.Y));
             Text = "Game  坐标表示：" + Convert.ToString(p.X) + "," + Convert.ToString(p.Y) ;
         }
 
@@ -65,11 +63,16 @@ namespace doomsday_scut
             }
             myprocessbar.Hide();
 
-            player[0] = new Player();
-            player[0].figure = new Bitmap(Properties.Resources._fighter2);
+            player[0] = new Player { figure = new Bitmap(Properties.Resources._fighter2) };
             player[0].figure.SetResolution(resolution_value, resolution_value);
             player[0].is_active = 1;
-            
+
+            npc[0] = new Npc(240, 240, new Bitmap(Properties.Resources._npc2))
+            {
+                map = 0,
+                idle_walk_direction = Comm.LEFT,
+                idle_walk_time = 20
+            };
             Draw();
         }
         
@@ -89,24 +92,38 @@ namespace doomsday_scut
             BufferedGraphicsContext currentContext = BufferedGraphicsManager.Current;
             BufferedGraphics myBuffer = currentContext.Allocate(g1, this.DisplayRectangle);
             //draw image
-            animation_ctrl += 1;
-            Map.Draw(map, player, myBuffer.Graphics, new Rectangle(0, 0, pictureBox1.Width, pictureBox1.Height));
+            
+            Map.Draw(map, player, npc, myBuffer.Graphics, new Rectangle(0, 0, pictureBox1.Width, pictureBox1.Height));
             //Player.Draw(player,myBuffer.Graphics);
             //release resource
             myBuffer.Render();
             myBuffer.Dispose();
+            start = false;
         }
 
         private void Game_KeyUp(object sender, KeyEventArgs e)
         {
             Player.key_ctrl_up(player, e);
+            //Draw();
+        }
+
+        private void timer1_Tick(object sender, EventArgs e)
+        {
+            for (int i = 0; i < npc.Length; i++)
+            {
+                if (npc[i] == null)
+                    continue;
+                if (npc[i].map != Map.current_map)
+                    continue;
+                npc[i].timer_logic(map);
+            }
             Draw();
         }
 
         public class Player
         {
             //Class of PCC Role
-            public int x = 48;                      //x coordinate
+            public int x = 288;                      //x coordinate
             public int y = 48;                      //y coordinate
             public int coordinate_x = 1;
             public int coordinate_y = 2;
@@ -124,6 +141,9 @@ namespace doomsday_scut
             {
                 figure = new Bitmap(Properties.Resources._fighter2);
                 figure.SetResolution(resolution_value, resolution_value);
+                coordinate_x = x / Convert.ToInt32(Convert.ToDouble(32) * resolution_rate);
+                coordinate_y = y / Convert.ToInt32(Convert.ToDouble(32) * resolution_rate) + 1;
+
             }
             public static Point key_ctrl(Player[] player, Map[] map, KeyEventArgs e)
             {
@@ -154,8 +174,8 @@ namespace doomsday_scut
                 if (p.anm_frame >= int.MaxValue) p.anm_frame = 0;
                 //time
                 p.last_walk_time = Comm.Time();
-                p.coordinate_x = p.x / 48;
-                p.coordinate_y = p.y / 48 + 1;
+                p.coordinate_x = p.x / Convert.ToInt32(Convert.ToDouble(32) * resolution_rate);
+                p.coordinate_y = p.y / Convert.ToInt32(Convert.ToDouble(32) * resolution_rate) + 1;
                 return new Point(p.coordinate_x, p.coordinate_y);
             }
             public static void Draw(Player[] player, Graphics g, int map_sx,int map_sy)
@@ -226,7 +246,7 @@ namespace doomsday_scut
         public class Map
         {
             //这个类负责地图管理与绘制
-            public static int current_map = 4;          //current map number
+            public static int current_map = 0;          //current map number
             public string bitmap_path;
             public Bitmap bitmap;
             public static Bitmap map_resource = new Bitmap(Properties.Resources.map_test);
@@ -326,7 +346,7 @@ namespace doomsday_scut
             }
 
 
-            public static void Draw(Map[] map, Player[] player, Graphics g, Rectangle stage)
+            public static void Draw(Map[] map, Player[] player, Npc[] npc, Graphics g, Rectangle stage)
             {
                 Map m = map[current_map];
                 //drawing position
@@ -365,9 +385,17 @@ namespace doomsday_scut
                 //draw
                 g.DrawImage(m.bitmap, map_sx, map_sy);
                 Player.Draw(player, g, map_sx, map_sy);
+                for (int i = 0; i < npc.Length; i++)
+                {
+                    if (npc[i] == null)
+                        continue;
+                    if (npc[i].map != current_map)
+                        continue;
+                    npc[i].draw(g, map_sx, map_sy);
+                }
             }
 
-            public static void change_map(Map[] map, Player[] player, int newindex, int x, int y, int face)
+            public static void change_map(Map[] map, Player[] player, Npc[] npc, int newindex, int x, int y, int face)
             {
                 //unload old map resource
                 if (map[current_map].bitmap!=null)
@@ -380,6 +408,17 @@ namespace doomsday_scut
                 //current_map
                 current_map = newindex;
                 Player.set_position(player, x, y, face);
+
+                //NPC resource
+                for (int i = 0; i < npc.Length; i++)
+                {
+                    if (npc[i] == null)
+                        continue;
+                    if (npc[i].map == current_map)
+                        npc[i].unload();
+                    if (npc[i].map == newindex)
+                        npc[i].load();
+                }
             }
             public static bool can_through(Map[] map,int x,int y)
             {
@@ -518,5 +557,146 @@ namespace doomsday_scut
                 return bmp;
             }
         }
+
+        public class Npc
+        {
+            //position
+            public int map = 0;        //map id
+            public int x = 0;
+            public int y = 0;
+            public int x_offset = -120;
+            public int y_offset = -220;
+            public int coordinate_x = -1;
+            public int coordinate_y = -1;
+            //show
+            public string bitmap_path = "";
+            public Bitmap bitmap;
+            bool visible = true;
+
+            public int face = Comm.DOWN;
+            public int walk_frame = 0;
+            public long last_walk_time = 0;
+            public long walk_interval = 80;
+            public int speed = Convert.ToInt32(Convert.ToDouble(32 * resolution_rate));
+            public int idle_walk_direction = Comm.DOWN;
+            public int idle_walk_time = 0;
+            public int idle_walk_time_now = 0;
+            //load
+            public Npc(int x, int y, Bitmap b)
+            {
+                bitmap = b;
+                this.x = x;
+                this.y = y;
+                bitmap.SetResolution(resolution_value, resolution_value);
+                coordinate_x = x / Convert.ToInt32(Convert.ToDouble(32) * resolution_rate);
+                coordinate_y = y / Convert.ToInt32(Convert.ToDouble(32) * resolution_rate) + 1;
+            }
+
+            public void load()
+            {
+                MessageBox.Show("npcload!");
+                if (bitmap_path != "")
+                {
+                    bitmap = new Bitmap(bitmap_path);
+                    
+                }
+            }
+
+            public void unload()
+            {
+                if (bitmap != null)
+                    bitmap = null;
+            }
+
+            public void draw(Graphics g, int map_sx, int map_sy)
+            {
+                if (!visible)
+                    return;
+                draw_character(g, map_sx, map_sy);
+            }
+
+            public void draw_character(Graphics g,int map_sx,int map_sy)
+            {
+                Rectangle rent = new Rectangle(
+                    bitmap.Width / 4 * (walk_frame % 4),
+                    bitmap.Height / 4 * (face - 1),
+                    bitmap.Width / 4,
+                    bitmap.Height / 4);
+                Bitmap bitmap0 = bitmap.Clone(rent, bitmap.PixelFormat);
+                g.DrawImage(bitmap0, map_sx + x , map_sy + y );
+            }
+
+            public void walk(Map[] map, int direction, bool isblock)
+            {
+                //face
+                face = direction;
+                //interval determination
+                if (Comm.Time() - last_walk_time <= walk_interval)
+                    return;
+                //walking 
+                //up
+                if(direction == Comm.UP && (!isblock || Map.can_through(map,coordinate_x,coordinate_y - 1)))
+                {
+                    y -= speed;
+                }
+                //down
+                else if(direction == Comm.DOWN && (!isblock || Map.can_through(map, coordinate_x, coordinate_y + 1)))
+                {
+                    y += speed;
+                }
+                //right
+                else if (direction == Comm.LEFT && (!isblock || Map.can_through(map, coordinate_x - 1, coordinate_y )))
+                {
+                    x -= speed;
+                }
+                //left
+                else if (direction == Comm.RIGHT && (!isblock || Map.can_through(map, coordinate_x + 1, coordinate_y )))
+                {
+                    x += speed;
+                }
+                coordinate_x = x / Convert.ToInt32(Convert.ToDouble(32) * resolution_rate);
+                coordinate_y = y / Convert.ToInt32(Convert.ToDouble(32) * resolution_rate) + 1;
+                //animation frame
+                walk_frame += 1;
+                if (walk_frame >= int.MaxValue)
+                    walk_frame = 0;
+                last_walk_time = Comm.Time();
+            }
+            public void Stop_walk()
+            {
+                walk_frame = 0;
+                last_walk_time = 0;
+            }
+            public void timer_logic(Map[] map)
+            {
+                if (idle_walk_time != 0)
+                {
+                    int direction;
+                    if (idle_walk_time_now >= 0)
+                        direction = idle_walk_direction;
+                    else
+                        direction = Comm.opposite_direction(idle_walk_direction);
+
+                    walk(map, direction, true);
+
+                    if(idle_walk_time_now >=0)
+                    {
+                        idle_walk_time_now += 1;
+                        if (idle_walk_time_now > idle_walk_time)
+                            idle_walk_time_now = -1;
+                    }
+                    else if (idle_walk_time_now < 0)
+                    {
+                        idle_walk_time_now -= 1;
+                        if (idle_walk_time_now < -idle_walk_time)
+                            idle_walk_time_now = 1;
+                    }
+                }
+            }
+
+
+        }
+
+        
     }
 }

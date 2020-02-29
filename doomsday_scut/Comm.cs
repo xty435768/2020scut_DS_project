@@ -15,5 +15,19 @@ namespace doomsday_scut
             TimeSpan ts = DateTime.Now - dt1;
             return (long)ts.TotalMilliseconds;
         }
+
+        public static int UP = 4;
+        public static int DOWN = 1;
+        public static int LEFT = 2;
+        public static int RIGHT = 3;
+
+        public static int opposite_direction(int direction)
+        {
+            if (direction == UP) return DOWN;
+            else if (direction == DOWN) return UP;
+            else if (direction == RIGHT) return LEFT;
+            else if (direction == LEFT) return RIGHT;
+            return DOWN;
+        }
     }
 }
