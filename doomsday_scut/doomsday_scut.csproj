@@ -86,6 +86,7 @@
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Task.cs" />
     <EmbeddedResource Include="Form1.resx">
       <DependentUpon>Form1.cs</DependentUpon>
     </EmbeddedResource>
@@ -139,6 +140,78 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\2.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\0215\action\1.PNG" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\0215\action\2.PNG" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\0215\action\3.PNG" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\0215\action\4.PNG" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\0215\action\5.PNG" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\0215\action\6.PNG" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\0215\action\7.PNG" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\0215\action\8.PNG" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\0215\action\9.PNG" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\0215\action\10.PNG" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\0215\action\11.PNG" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\0215\action\12.PNG" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\0215\action\13.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\0215\action\039-Mage07.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\0215\action\ARPG弓箭手-行走图.PNG" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\0215\action\cha_girl1行.PNG" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\0215\action\Hunter_攻击.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\0215\action\动作.PNG" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\0215\action\黄金兵.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\0215\action\普通-攻击.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\0215\action\完成的小丑.PNG" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\0215\action\小兵.PNG" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\0215\action\亚狄_攻击.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\0215\action\勇士.PNG" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">

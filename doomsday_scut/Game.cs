@@ -19,7 +19,7 @@ namespace doomsday_scut
         
         Player[] player = new Player[1];        //PCC数量暂定一个
         Map[] map = new Map[10];
-        Npc[] npc = new Npc[1];
+        Npc[] npc = new Npc[2];
         
         bool start = true;
         static int resolution_value = 64;
@@ -46,7 +46,7 @@ namespace doomsday_scut
 
         private void Game_KeyDown(object sender, KeyEventArgs e)
         {
-            Point p = Player.key_ctrl(player, map, e);
+            Point p = Player.key_ctrl(player, map, npc, e);
             Text = "Game  坐标表示：" + Convert.ToString(p.X) + "," + Convert.ToString(p.Y) ;
         }
 
@@ -67,12 +67,18 @@ namespace doomsday_scut
             player[0].figure.SetResolution(resolution_value, resolution_value);
             player[0].is_active = 1;
 
-            npc[0] = new Npc(240, 240, new Bitmap(Properties.Resources._npc2))
+            npc[0] = new Npc(240, 240, new Bitmap(Properties.Resources._npc2),Comm.ACTIVE_NPC)
             {
                 map = 0,
                 idle_walk_direction = Comm.LEFT,
                 idle_walk_time = 20
             };
+            npc[1] = new Npc(240, 240, new Bitmap(Properties.Resources._npc_static_3), Comm.STATIC_NPC)
+            {
+                map = 0
+            };
+
+
             Draw();
         }
         
@@ -109,6 +115,7 @@ namespace doomsday_scut
 
         private void timer1_Tick(object sender, EventArgs e)
         {
+
             for (int i = 0; i < npc.Length; i++)
             {
                 if (npc[i] == null)
@@ -145,7 +152,7 @@ namespace doomsday_scut
                 coordinate_y = y / Convert.ToInt32(Convert.ToDouble(32) * resolution_rate) + 1;
 
             }
-            public static Point key_ctrl(Player[] player, Map[] map, KeyEventArgs e)
+            public static Point key_ctrl(Player[] player, Map[] map,Npc[] npc, KeyEventArgs e)
             {
                 Point nullpoint = new Point(-1, -1);
                 Player p = player[current_player];
@@ -169,13 +176,17 @@ namespace doomsday_scut
                 else if (e.KeyCode == Keys.Right && Map.can_through(map, p.coordinate_x + 1, p.coordinate_y)) { p.x += p.speed; }
                 else return nullpoint;
 
+                //update coordinates
+                p.coordinate_x = p.x / Convert.ToInt32(Convert.ToDouble(32) * resolution_rate);
+                p.coordinate_y = p.y / Convert.ToInt32(Convert.ToDouble(32) * resolution_rate) + 1;
                 //animation frame
                 p.anm_frame += 1;
                 if (p.anm_frame >= int.MaxValue) p.anm_frame = 0;
+                //collision
+                npc_collision(player, map, npc);
                 //time
                 p.last_walk_time = Comm.Time();
-                p.coordinate_x = p.x / Convert.ToInt32(Convert.ToDouble(32) * resolution_rate);
-                p.coordinate_y = p.y / Convert.ToInt32(Convert.ToDouble(32) * resolution_rate) + 1;
+
                 return new Point(p.coordinate_x, p.coordinate_y);
             }
             public static void Draw(Player[] player, Graphics g, int map_sx,int map_sy)
@@ -241,6 +252,20 @@ namespace doomsday_scut
                 return player[current_player].face;
             }
 
+            public static void npc_collision(Player[] player, Map[] map, Npc[] npc)
+            {
+                Player p = player[current_player];
+                for (int i = 0; i < npc.Length; i++)
+                {
+                    if (npc[i] == null)
+                        continue;
+                    if (npc[i].status == Comm.STATIC_NPC && npc[i].is_collision(p.coordinate_x, p.coordinate_y))
+                    {
+                        Task.story(i);
+                        break;
+                    }
+                }
+            }
         }
 
         public class Map
@@ -568,6 +593,8 @@ namespace doomsday_scut
             public int y_offset = -220;
             public int coordinate_x = -1;
             public int coordinate_y = -1;
+            public int status;
+            public Random r = new Random(Guid.NewGuid().GetHashCode());
             //show
             public string bitmap_path = "";
             public Bitmap bitmap;
@@ -576,17 +603,18 @@ namespace doomsday_scut
             public int face = Comm.DOWN;
             public int walk_frame = 0;
             public long last_walk_time = 0;
-            public long walk_interval = 80;
+            public long walk_interval = 300;
             public int speed = Convert.ToInt32(Convert.ToDouble(32 * resolution_rate));
             public int idle_walk_direction = Comm.DOWN;
             public int idle_walk_time = 0;
             public int idle_walk_time_now = 0;
             //load
-            public Npc(int x, int y, Bitmap b)
+            public Npc(int x, int y, Bitmap b, int s)
             {
                 bitmap = b;
                 this.x = x;
                 this.y = y;
+                status = s;
                 bitmap.SetResolution(resolution_value, resolution_value);
                 coordinate_x = x / Convert.ToInt32(Convert.ToDouble(32) * resolution_rate);
                 coordinate_y = y / Convert.ToInt32(Convert.ToDouble(32) * resolution_rate) + 1;
@@ -612,7 +640,16 @@ namespace doomsday_scut
             {
                 if (!visible)
                     return;
-                draw_character(g, map_sx, map_sy);
+                if (status == Comm.STATIC_NPC)
+                {
+                    Bitmap b = bitmap.Clone(new Rectangle(bitmap.Width / 4 * (walk_frame % 4),bitmap.Height / 4 * (face - 1),bitmap.Width / 4,bitmap.Height / 4), bitmap.PixelFormat);
+                    b.SetResolution(resolution_value, resolution_value);
+                    g.DrawImage(b, map_sx + x, map_sy + y);
+                }
+                else
+                {
+                    draw_character(g, map_sx, map_sy);
+                }
             }
 
             public void draw_character(Graphics g,int map_sx,int map_sy)
@@ -672,14 +709,16 @@ namespace doomsday_scut
                 if (idle_walk_time != 0)
                 {
                     int direction;
-                    if (idle_walk_time_now >= 0)
-                        direction = idle_walk_direction;
-                    else
-                        direction = Comm.opposite_direction(idle_walk_direction);
-
+                    if (0 <= idle_walk_time_now && idle_walk_time_now < idle_walk_time / 2)
+                        direction = Comm.RIGHT;
+                    else if (idle_walk_time / 2 <= idle_walk_time_now && idle_walk_time_now < idle_walk_time)
+                        direction = Comm.DOWN;
+                    else if ((-idle_walk_time) / 2 <= idle_walk_time_now && idle_walk_time_now < 0)
+                        direction = Comm.UP;
+                    else 
+                        direction = Comm.LEFT;
                     walk(map, direction, true);
-
-                    if(idle_walk_time_now >=0)
+                    if (idle_walk_time_now >= 0)
                     {
                         idle_walk_time_now += 1;
                         if (idle_walk_time_now > idle_walk_time)
@@ -694,7 +733,20 @@ namespace doomsday_scut
                 }
             }
 
-
+            public bool is_collision(int x, int y)
+            {
+                if (x == coordinate_x - 1 && y == coordinate_y)
+                    face = Comm.LEFT;
+                else if (x == coordinate_x + 1 && y == coordinate_y)
+                    face = Comm.RIGHT;
+                else if (x == coordinate_x && y == coordinate_y - 1)
+                    face = Comm.UP;
+                else if (x == coordinate_x && y == coordinate_y + 1)
+                    face = Comm.DOWN;
+                else
+                    return false;
+                return true;
+            }
         }
 
         
