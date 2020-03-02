@@ -21,6 +21,10 @@ namespace doomsday_scut
         public static int LEFT = 2;
         public static int RIGHT = 3;
 
+        //npc status
+        public static int ACTIVE_NPC = 1;
+        public static int STATIC_NPC = 0;
+
         public static int opposite_direction(int direction)
         {
             if (direction == UP) return DOWN;
