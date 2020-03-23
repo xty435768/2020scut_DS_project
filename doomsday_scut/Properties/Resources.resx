@@ -133,7 +133,7 @@
   <data name="_npc_static_3" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\0215\origin\3.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
-  <data name="ARPG弓箭手_行走图" type="System.Resources.ResXFileRef, System.Windows.Forms">
+  <data name="_fighter2_attack" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\0215\action\ARPG弓箭手-行走图.PNG;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
   <data name="cha_girl1行" type="System.Resources.ResXFileRef, System.Windows.Forms">
@@ -190,7 +190,7 @@
   <data name="动作" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\0215\action\动作.PNG;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
-  <data name="勇士" type="System.Resources.ResXFileRef, System.Windows.Forms">
+  <data name="npc2_attack" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\0215\action\勇士.PNG;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
   <data name="完成的小丑" type="System.Resources.ResXFileRef, System.Windows.Forms">
@@ -204,5 +204,8 @@
   </data>
   <data name="黄金兵" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\0215\action\黄金兵.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="bullet" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\0215\bullet.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
 </root>

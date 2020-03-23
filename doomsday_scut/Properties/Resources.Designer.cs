@@ -213,6 +213,16 @@ namespace doomsday_scut.Properties {
         /// <summary>
         ///   查找 System.Drawing.Bitmap 类型的本地化资源。
         /// </summary>
+        internal static System.Drawing.Bitmap _fighter2_attack {
+            get {
+                object obj = ResourceManager.GetObject("_fighter2_attack", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   查找 System.Drawing.Bitmap 类型的本地化资源。
+        /// </summary>
         internal static System.Drawing.Bitmap _npc_static_3 {
             get {
                 object obj = ResourceManager.GetObject("_npc_static_3", resourceCulture);
@@ -243,9 +253,9 @@ namespace doomsday_scut.Properties {
         /// <summary>
         ///   查找 System.Drawing.Bitmap 类型的本地化资源。
         /// </summary>
-        internal static System.Drawing.Bitmap ARPG弓箭手_行走图 {
+        internal static System.Drawing.Bitmap bullet {
             get {
-                object obj = ResourceManager.GetObject("ARPG弓箭手_行走图", resourceCulture);
+                object obj = ResourceManager.GetObject("bullet", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }
@@ -283,6 +293,16 @@ namespace doomsday_scut.Properties {
         /// <summary>
         ///   查找 System.Drawing.Bitmap 类型的本地化资源。
         /// </summary>
+        internal static System.Drawing.Bitmap npc2_attack {
+            get {
+                object obj = ResourceManager.GetObject("npc2_attack", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   查找 System.Drawing.Bitmap 类型的本地化资源。
+        /// </summary>
         internal static System.Drawing.Bitmap 亚狄_攻击 {
             get {
                 object obj = ResourceManager.GetObject("亚狄_攻击", resourceCulture);
@@ -296,16 +316,6 @@ namespace doomsday_scut.Properties {
         internal static System.Drawing.Bitmap 动作 {
             get {
                 object obj = ResourceManager.GetObject("动作", resourceCulture);
-                return ((System.Drawing.Bitmap)(obj));
-            }
-        }
-        
-        /// <summary>
-        ///   查找 System.Drawing.Bitmap 类型的本地化资源。
-        /// </summary>
-        internal static System.Drawing.Bitmap 勇士 {
-            get {
-                object obj = ResourceManager.GetObject("勇士", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }

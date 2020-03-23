@@ -11,6 +11,7 @@ using System.Drawing.Imaging;
 using System.Runtime.InteropServices;
 using System.IO;
 using System.Data.SQLite;
+using System.Threading;
 
 namespace doomsday_scut
 {
@@ -19,8 +20,8 @@ namespace doomsday_scut
         
         Player[] player = new Player[1];        //PCC数量暂定一个
         Map[] map = new Map[10];
-        Npc[] npc = new Npc[2];
-        
+        List<Npc> npc = new List<Npc>();
+        public static List<Bullet> bullet = new List<Bullet>();
         bool start = true;
         static int resolution_value = 64;
         static double resolution_rate = 96.0 / resolution_value;   //只改分母
@@ -47,7 +48,6 @@ namespace doomsday_scut
         private void Game_KeyDown(object sender, KeyEventArgs e)
         {
             Point p = Player.key_ctrl(player, map, npc, e);
-            Text = "Game  坐标表示：" + Convert.ToString(p.X) + "," + Convert.ToString(p.Y) ;
         }
 
         private void Game_Load(object sender, EventArgs e)
@@ -63,20 +63,35 @@ namespace doomsday_scut
             }
             myprocessbar.Hide();
 
-            player[0] = new Player { figure = new Bitmap(Properties.Resources._fighter2) };
+            player[0] = new Player(288,48,Comm.DOWN,new Bitmap(Properties.Resources._fighter2_attack)) { figure = new Bitmap(Properties.Resources._fighter2) };
             player[0].figure.SetResolution(resolution_value, resolution_value);
             player[0].is_active = 1;
-
-            npc[0] = new Npc(240, 240, new Bitmap(Properties.Resources._npc2),Comm.ACTIVE_NPC)
+            npc.Add(new Npc(240, 240, new Bitmap(Properties.Resources._npc2), Comm.ACTIVE_NPC, Comm.DOWN, new Bitmap(Properties.Resources.npc2_attack))
             {
                 map = 0,
                 idle_walk_direction = Comm.LEFT,
                 idle_walk_time = 20
-            };
-            npc[1] = new Npc(240, 240, new Bitmap(Properties.Resources._npc_static_3), Comm.STATIC_NPC)
+                
+            });
+            
+            npc.Add(new Npc(600, 240, new Bitmap(Properties.Resources._npc_static_3), Comm.DOWN, Comm.STATIC_NPC, null)
             {
                 map = 0
-            };
+            });
+
+            npc.Add(new Npc(192, 240, new Bitmap(Properties.Resources._npc2), Comm.ACTIVE_NPC, Comm.DOWN, new Bitmap(Properties.Resources.npc2_attack))
+            {
+                map = 0,
+                idle_walk_direction = Comm.LEFT,
+                idle_walk_time = 10
+            });
+
+            npc.Add(new Npc(144, 240, new Bitmap(Properties.Resources._npc2), Comm.ACTIVE_NPC, Comm.DOWN, new Bitmap(Properties.Resources.npc2_attack))
+            {
+                map = 0,
+                idle_walk_direction = Comm.LEFT,
+                idle_walk_time = 30
+            });
 
 
             Draw();
@@ -99,7 +114,7 @@ namespace doomsday_scut
             BufferedGraphics myBuffer = currentContext.Allocate(g1, this.DisplayRectangle);
             //draw image
             
-            Map.Draw(map, player, npc, myBuffer.Graphics, new Rectangle(0, 0, pictureBox1.Width, pictureBox1.Height));
+            Map.Draw(map, player, npc, bullet, myBuffer.Graphics, new Rectangle(0, 0, pictureBox1.Width, pictureBox1.Height));
             //Player.Draw(player,myBuffer.Graphics);
             //release resource
             myBuffer.Render();
@@ -110,55 +125,127 @@ namespace doomsday_scut
         private void Game_KeyUp(object sender, KeyEventArgs e)
         {
             Player.key_ctrl_up(player, e);
-            //Draw();
         }
 
-        private void timer1_Tick(object sender, EventArgs e)
+        
+
+        public static Color lifebar_color(int totallife,int currentlife)
         {
-
-            for (int i = 0; i < npc.Length; i++)
-            {
-                if (npc[i] == null)
-                    continue;
-                if (npc[i].map != Map.current_map)
-                    continue;
-                npc[i].timer_logic(map);
-            }
-            Draw();
+            double r = Convert.ToDouble(currentlife) / Convert.ToDouble(totallife);
+            if (r >= 0.6667) return Color.Lime;
+            else if (0.3333 <= r && r < 0.6667) return Color.Yellow;
+            else return Color.Red;
         }
 
-        public class Player
+        public static Rectangle lifebar_position(int totallife, int currentlife,int x,int y)
+        {
+            return new Rectangle(x + 5, y - 5, Convert.ToInt16((32.0 * resolution_rate - 10.0)*(Convert.ToDouble(currentlife) / Convert.ToDouble(totallife))), 5);
+        }
+
+        public class Father
+        {
+            //position
+            //public int map = 0;        //map id
+            public int x = 0;
+            public int y = 0;
+            public int coordinate_x = -1;
+            public int coordinate_y = -1;
+
+            ////show
+            //public Bitmap bitmap;
+            //public bool visible = true;
+
+            public int face = Comm.DOWN;
+            //public int walk_frame = 0;
+            //public long last_walk_time = 0;
+            //public long walk_interval = 300;
+            //public int speed = Convert.ToInt32(Convert.ToDouble(32 * resolution_rate));
+            //public int idle_walk_direction = Comm.DOWN;
+            //public int idle_walk_time = 0;
+            //public int idle_walk_time_now = 0;
+
+            //public int attack = 10;
+
+            //animation
+            public Animation[] anm = new Animation[1];
+            public int anm_frame = 0;
+            public int current_anm = -1;
+            public long last_anm_time = 0;
+
+            public Father(int x,int y,int f)
+            {
+                this.x = x;
+                this.y = y;
+                coordinate_x = x / Convert.ToInt32(Convert.ToDouble(32) * resolution_rate);
+                coordinate_y = y / Convert.ToInt32(Convert.ToDouble(32) * resolution_rate) + 1;
+                face = f;
+            }
+
+            public Point getCoordinatePoint()
+            {
+                return new Point(coordinate_x, coordinate_y);
+            }
+
+            //npc animation
+            public void draw_anm(Graphics g, int map_sx, int map_sy)
+            {
+                if (anm == null || current_anm >= anm.Length || anm[current_anm] == null || anm[current_anm].bitmap == null)
+                {
+                    current_anm = -1;
+                    anm_frame = 0;
+                    last_anm_time = 0;
+                    return;
+                }
+                anm[current_anm].draw(g, anm_frame, face, map_sx + x, y + map_sy);
+                if (Comm.Time() - last_anm_time >= Animation.RATE)
+                {
+                    anm_frame += 1;
+                    last_anm_time = Comm.Time();
+                    if (anm_frame / anm[current_anm].anm_rate >= anm[current_anm].max_frame)
+                    {
+                        current_anm = -1;
+                        anm_frame = 0;
+                        last_anm_time = 0;
+                    }
+                }
+            }
+
+            public void play_anm(int index)
+            {
+                current_anm = index;
+                anm_frame = 0;
+            }
+        }
+
+        public class Player : Father
         {
             //Class of PCC Role
-            public int x = 288;                      //x coordinate
-            public int y = 48;                      //y coordinate
-            public int coordinate_x = 1;
-            public int coordinate_y = 2;
-            public int face = 1;
-            public int anm_frame = 0;               //current animation frame
             public long last_walk_time = 0;         //record last moving time point
             public long walk_interval = 100;        //set time interval between two steps
             public int speed = 48;
+            public int life = 150;
+            public static int totallife = 150;
+            public int bullet_move_interval = 100;
+            public int last_shooting_time = 0;
 
             public Bitmap figure;                   //figure picture
             public static int current_player = 0;   //current player
             public int is_active = 0;               //current player is active or not
 
-            public Player()
+            
+            public Player(int x,int y,int f,Bitmap animation):base(x,y,f)
             {
+                anm[0] = new Animation(animation);
                 figure = new Bitmap(Properties.Resources._fighter2);
                 figure.SetResolution(resolution_value, resolution_value);
-                coordinate_x = x / Convert.ToInt32(Convert.ToDouble(32) * resolution_rate);
-                coordinate_y = y / Convert.ToInt32(Convert.ToDouble(32) * resolution_rate) + 1;
-
             }
-            public static Point key_ctrl(Player[] player, Map[] map,Npc[] npc, KeyEventArgs e)
+            public static Point key_ctrl(Player[] player, Map[] map,List<Npc> npc, KeyEventArgs e)
             {
                 Point nullpoint = new Point(-1, -1);
                 Player p = player[current_player];
                 //change role （由于暂时不用该功能，所以先注释掉）
                 //if (e.KeyCode == Keys.Tab)  {  key_change_player(player);  }
-                
+
                 //change face or not
                 if (e.KeyCode == Keys.Up && p.face != 4) { p.face = 4; }
                 if (e.KeyCode == Keys.Down && p.face != 1) { p.face = 1; }
@@ -166,14 +253,22 @@ namespace doomsday_scut
                 if (e.KeyCode == Keys.Right && p.face != 3) { p.face = 3; }
 
                 //time interval determination
-                if (Comm.Time() - p.last_walk_time <= p.walk_interval)
-                    return nullpoint;
-
+                if(e.KeyCode == Keys.Up || e.KeyCode == Keys.Down || e.KeyCode == Keys.Left || e.KeyCode == Keys.Right)
+                    if (Comm.Time() - p.last_walk_time <= p.walk_interval)
+                        return nullpoint;
+                else if (e.KeyCode == Keys.Space)
+                    if (Comm.Time() - p.last_shooting_time <= p.bullet_move_interval)
+                        return nullpoint;
                 //move
                 if (e.KeyCode == Keys.Up && Map.can_through(map,p.coordinate_x,p.coordinate_y - 1)) { p.y -= p.speed; }
                 else if (e.KeyCode == Keys.Down && Map.can_through(map, p.coordinate_x, p.coordinate_y + 1)) { p.y += p.speed; }
                 else if (e.KeyCode == Keys.Left && Map.can_through(map, p.coordinate_x - 1, p.coordinate_y)) { p.x -= p.speed; }
                 else if (e.KeyCode == Keys.Right && Map.can_through(map, p.coordinate_x + 1, p.coordinate_y)) { p.x += p.speed; }
+                else if (e.KeyCode == Keys.Space && Map.can_through(map, p.coordinate_x + Comm.DIRECTION_MAP[p.face].X, p.coordinate_y + Comm.DIRECTION_MAP[p.face].Y))
+                {
+                    bullet.Add(new Bullet(p.x, p.y, p.coordinate_x, p.coordinate_y, 30, p.face));
+                    p.play_anm(0);
+                }
                 else return nullpoint;
 
                 //update coordinates
@@ -189,12 +284,26 @@ namespace doomsday_scut
 
                 return new Point(p.coordinate_x, p.coordinate_y);
             }
+
+
             public static void Draw(Player[] player, Graphics g, int map_sx,int map_sy)
             {
                 Player p = player[current_player];
-                Rectangle crazycoderRgl = new Rectangle(p.figure.Width / 4 * (p.anm_frame % 4), p.figure.Height / 4 * (p.face - 1), p.figure.Width / 4, p.figure.Height / 4);
-                Bitmap b0 = p.figure.Clone(crazycoderRgl, p.figure.PixelFormat);
-                g.DrawImage(b0, map_sx + p.x, map_sy + p.y);
+                if (p.current_anm < 0)
+                {
+                    Rectangle crazycoderRgl = new Rectangle(p.figure.Width / 4 * (p.anm_frame % 4), p.figure.Height / 4 * (p.face - 1), p.figure.Width / 4, p.figure.Height / 4);
+                    Bitmap b0 = p.figure.Clone(crazycoderRgl, p.figure.PixelFormat);
+                    //draw figure
+                    g.DrawImage(b0, map_sx + p.x, map_sy + p.y);
+                }
+                else
+                {
+                    p.draw_anm(g, map_sx, map_sy);
+                }
+                //draw lifebar
+                g.FillRectangle(new SolidBrush(lifebar_color(totallife, p.life)), lifebar_position(150, p.life, map_sx + p.x, map_sy + p.y));
+                g.DrawString("玩家坐标：" + Convert.ToString(p.coordinate_x) + "," + Convert.ToString(p.coordinate_y), new Font("Arial", 12, FontStyle.Bold), Brushes.White, new PointF(10, 10));
+                g.DrawString("玩家像素坐标：" + Convert.ToString(p.x) + "," + Convert.ToString(p.y), new Font("Arial", 12, FontStyle.Bold), Brushes.White, new PointF(10, 30));
             }
 
             public static void key_change_player(Player[] player)
@@ -252,10 +361,10 @@ namespace doomsday_scut
                 return player[current_player].face;
             }
 
-            public static void npc_collision(Player[] player, Map[] map, Npc[] npc)
+            public static void npc_collision(Player[] player, Map[] map, List<Npc> npc)
             {
                 Player p = player[current_player];
-                for (int i = 0; i < npc.Length; i++)
+                for (int i = 0; i < npc.Count; i++)
                 {
                     if (npc[i] == null)
                         continue;
@@ -264,6 +373,25 @@ namespace doomsday_scut
                         Task.story(i);
                         break;
                     }
+                }
+            }
+
+            public void bullet_move(Map[] map)
+            {
+                for (int i = 0; i < bullet.Count; i++)
+                {
+                    if (bullet[i] == null)
+                        continue;
+                    if (bullet[i].disabled)
+                        bullet[i] = null;
+                    else
+                        bullet[i].bullet_time_logic(map);
+                }
+                //清理已经消失的子弹
+                for(int i = bullet.Count - 1; i >= 0; i--)
+                {
+                    if (bullet[i] == null)
+                        bullet.Remove(bullet[i]);
                 }
             }
         }
@@ -371,7 +499,7 @@ namespace doomsday_scut
             }
 
 
-            public static void Draw(Map[] map, Player[] player, Npc[] npc, Graphics g, Rectangle stage)
+            public static void Draw(Map[] map, Player[] player, List<Npc> npc, List<Bullet> bullet,Graphics g, Rectangle stage)
             {
                 Map m = map[current_map];
                 //drawing position
@@ -410,13 +538,20 @@ namespace doomsday_scut
                 //draw
                 g.DrawImage(m.bitmap, map_sx, map_sy);
                 Player.Draw(player, g, map_sx, map_sy);
-                for (int i = 0; i < npc.Length; i++)
+                for (int i = 0; i < npc.Count; i++)
                 {
                     if (npc[i] == null)
                         continue;
                     if (npc[i].map != current_map)
                         continue;
                     npc[i].draw(g, map_sx, map_sy);
+                }
+                
+                for(int i = 0; i < bullet.Count; i++)
+                {
+                    if (bullet[i] == null)
+                        continue;
+                    bullet[i].draw(g, map_sx, map_sy);
                 }
             }
 
@@ -575,7 +710,6 @@ namespace doomsday_scut
                         {
                             bmp.SetPixel(j, i, wall.GetPixel(j % 32, i % 32));
                             //bmp.SetPixel(j, i, Color.Black);
-
                         }
                     }
                 }
@@ -583,24 +717,17 @@ namespace doomsday_scut
             }
         }
 
-        public class Npc
+        public class Npc : Father
         {
             //position
             public int map = 0;        //map id
-            public int x = 0;
-            public int y = 0;
-            public int x_offset = -120;
-            public int y_offset = -220;
-            public int coordinate_x = -1;
-            public int coordinate_y = -1;
             public int status;
             public Random r = new Random(Guid.NewGuid().GetHashCode());
             //show
             public string bitmap_path = "";
             public Bitmap bitmap;
-            bool visible = true;
+            public bool visible = true;
 
-            public int face = Comm.DOWN;
             public int walk_frame = 0;
             public long last_walk_time = 0;
             public long walk_interval = 300;
@@ -608,16 +735,17 @@ namespace doomsday_scut
             public int idle_walk_direction = Comm.DOWN;
             public int idle_walk_time = 0;
             public int idle_walk_time_now = 0;
+            public static int totallife = 150;
+            public int life = 150;
+            public int attack = 10;
+
             //load
-            public Npc(int x, int y, Bitmap b, int s)
+            public Npc(int x, int y, Bitmap b,int f, int s,Bitmap animation):base(x,y,f)
             {
                 bitmap = b;
-                this.x = x;
-                this.y = y;
                 status = s;
+                anm[0] = new Animation(animation);
                 bitmap.SetResolution(resolution_value, resolution_value);
-                coordinate_x = x / Convert.ToInt32(Convert.ToDouble(32) * resolution_rate);
-                coordinate_y = y / Convert.ToInt32(Convert.ToDouble(32) * resolution_rate) + 1;
             }
 
             public void load()
@@ -636,20 +764,34 @@ namespace doomsday_scut
                     bitmap = null;
             }
 
+            public Point getCoordinatePoint()
+            {
+                return new Point(coordinate_x, coordinate_y);
+            }
+
             public void draw(Graphics g, int map_sx, int map_sy)
             {
                 if (!visible)
                     return;
-                if (status == Comm.STATIC_NPC)
+                if (current_anm < 0)
                 {
-                    Bitmap b = bitmap.Clone(new Rectangle(bitmap.Width / 4 * (walk_frame % 4),bitmap.Height / 4 * (face - 1),bitmap.Width / 4,bitmap.Height / 4), bitmap.PixelFormat);
-                    b.SetResolution(resolution_value, resolution_value);
-                    g.DrawImage(b, map_sx + x, map_sy + y);
+                    if (status == Comm.STATIC_NPC)
+                    {
+                        Bitmap b = bitmap.Clone(new Rectangle(bitmap.Width / 4 * (walk_frame % 4), bitmap.Height / 4 * (face - 1), bitmap.Width / 4, bitmap.Height / 4), bitmap.PixelFormat);
+                        b.SetResolution(resolution_value, resolution_value);
+                        g.DrawImage(b, map_sx + x, map_sy + y);
+                    }
+                    else
+                    {
+                        draw_character(g, map_sx, map_sy);
+                    }
                 }
                 else
                 {
-                    draw_character(g, map_sx, map_sy);
+                    draw_anm(g, map_sx, map_sy);
                 }
+                //draw lifebar
+                g.FillRectangle(new SolidBrush(lifebar_color(totallife, life)), lifebar_position(150, life, map_sx + x, map_sy + y));
             }
 
             public void draw_character(Graphics g,int map_sx,int map_sy)
@@ -709,14 +851,21 @@ namespace doomsday_scut
                 if (idle_walk_time != 0)
                 {
                     int direction;
-                    if (0 <= idle_walk_time_now && idle_walk_time_now < idle_walk_time / 2)
-                        direction = Comm.RIGHT;
-                    else if (idle_walk_time / 2 <= idle_walk_time_now && idle_walk_time_now < idle_walk_time)
+                    //if (0 <= idle_walk_time_now && idle_walk_time_now < idle_walk_time / 2)
+                    //    direction = Comm.RIGHT;
+                    //else if (idle_walk_time / 2 <= idle_walk_time_now && idle_walk_time_now < idle_walk_time)
+                    //    direction = Comm.DOWN;
+                    //else if ((-idle_walk_time) / 2 <= idle_walk_time_now && idle_walk_time_now < 0)
+                    //    direction = Comm.UP;
+                    //else 
+                    //    direction = Comm.LEFT;
+                    if (0 <= idle_walk_time_now && idle_walk_time_now < idle_walk_time)
                         direction = Comm.DOWN;
-                    else if ((-idle_walk_time) / 2 <= idle_walk_time_now && idle_walk_time_now < 0)
+                    else if (-idle_walk_time <= idle_walk_time_now && idle_walk_time_now < 0)
                         direction = Comm.UP;
-                    else 
-                        direction = Comm.LEFT;
+                    else
+                        direction = Comm.UP;
+
                     walk(map, direction, true);
                     if (idle_walk_time_now >= 0)
                     {
@@ -735,6 +884,7 @@ namespace doomsday_scut
 
             public bool is_collision(int x, int y)
             {
+                //跟剧情人物对线
                 if (x == coordinate_x - 1 && y == coordinate_y)
                     face = Comm.LEFT;
                 else if (x == coordinate_x + 1 && y == coordinate_y)
@@ -747,8 +897,189 @@ namespace doomsday_scut
                     return false;
                 return true;
             }
+
         }
 
-        
+        public class Bullet
+        {
+            public int x;
+            public int y;
+            public int coordinate_x;
+            public int coordinate_y;
+            public int attack;              //单个子弹攻击力值
+
+            public int face = Comm.RIGHT;
+            public bool disabled = false;   //若子弹撞墙了就把这里设为true，画图遍历时直接销毁这个对象
+            public int move_interval = 300;
+            public long last_move_time = 0;
+            public int speed = Convert.ToInt32(Convert.ToDouble(32 * resolution_rate));
+            public Bitmap bitmap = Properties.Resources.bullet;
+
+            public Bullet(int x,int y,int coordinate_x,int coordinate_y,int attack,int face)
+            {
+                this.x = x;
+                this.y = y;
+                this.coordinate_x = coordinate_x;
+                this.coordinate_y = coordinate_y;
+                this.attack = attack;
+                this.face = face;
+                if (face == Comm.LEFT)
+                    bitmap.RotateFlip(RotateFlipType.Rotate180FlipY);
+                else if (face == Comm.DOWN)
+                    bitmap.RotateFlip(RotateFlipType.Rotate270FlipY);
+                else if (face == Comm.UP)
+                    bitmap.RotateFlip(RotateFlipType.Rotate90FlipXY);
+
+                bitmap.SetResolution(resolution_value, resolution_value);
+            }
+
+            public void draw(Graphics g, int map_sx, int map_sy)
+            {
+                Point p = get_bullet_head_coordinate();
+                if(face == Comm.UP||face == Comm.DOWN)
+                    g.DrawImage(bitmap, map_sx + x - Convert.ToInt32(16.0 * resolution_rate), map_sy + y);
+                else
+                    g.DrawImage(bitmap, map_sx + x, map_sy + y - Convert.ToInt32(16.0 * resolution_rate));
+                g.DrawString("子弹头坐标：" + Convert.ToString(p.X) + "," + Convert.ToString(p.Y), new Font("Arial", 12, FontStyle.Bold), Brushes.White, new PointF(10, 50));
+            }
+
+            public void bullet_move(Map[] map)
+            {
+                if (Comm.Time() - last_move_time <= move_interval)
+                    return;
+                if(Map.can_through(map,coordinate_x+Comm.DIRECTION_MAP[face].X,coordinate_y+Comm.DIRECTION_MAP[face].Y))
+                {
+                    x += (Comm.DIRECTION_MAP[face].X * speed);
+                    y += (Comm.DIRECTION_MAP[face].Y * speed);
+                }
+                else
+                {
+                    disabled = true;
+                }
+                coordinate_x = x / Convert.ToInt32(Convert.ToDouble(32) * resolution_rate);
+                coordinate_y = y / Convert.ToInt32(Convert.ToDouble(32) * resolution_rate) + 1;
+                
+                last_move_time = Comm.Time();
+            }
+
+            public void bullet_time_logic(Map []map)
+            {
+                bullet_move(map);
+            }
+
+            public Point get_bullet_head_coordinate()
+            {
+                //返回弹头的坐标，用于判定是否构成伤害
+                if (face == Comm.RIGHT)
+                    return new Point(coordinate_x + 1, coordinate_y - 1);
+                else if (face == Comm.UP)
+                    return new Point(coordinate_x, coordinate_y - 1);
+                else if (face == Comm.LEFT)
+                    return new Point(coordinate_x, coordinate_y - 1);
+                else
+                    return new Point(coordinate_x, coordinate_y);
+
+            }
+        }
+        private void timer_bullet_Tick(object sender, EventArgs e)
+        {
+            Player p = player[Player.current_player];
+            p.bullet_move(map);
+            #region 检测子弹与npc的碰撞
+            for (int i = 0; i < bullet.Count; i++)
+            {
+                for (int j = 0; j < npc.Count; j++)
+                {
+                    if(bullet[i].get_bullet_head_coordinate() == npc[j].getCoordinatePoint() && npc[j].status == Comm.ACTIVE_NPC)
+                    {
+                        npc[j].life -= bullet[i].attack;
+                        //MessageBox.Show("");
+                        bullet[i].disabled = true;
+                        if (npc[j].life <= 0)
+                            npc[j].visible = false;
+                    }
+                }
+            }
+            #endregion
+            for (int i = npc.Count - 1; i >= 0; i--)
+            {
+                if (!npc[i].visible)
+                    npc.Remove(npc[i]);
+            }
+            Draw();
+        }
+
+        private void timer1_Tick(object sender, EventArgs e)
+        {
+
+            for (int i = 0; i < npc.Count; i++)
+            {
+                if (npc[i] == null)
+                    continue;
+                if (npc[i].map != Map.current_map)
+                    continue;
+                npc[i].timer_logic(map);
+            }
+
+            #region npc对pcc的攻击
+            Player p = player[Player.current_player];
+            for (int i = 0; i < npc.Count; i++)
+            {
+                if (p.getCoordinatePoint() == npc[i].getCoordinatePoint())
+                {
+                    npc[i].play_anm(0);
+                    p.life -= npc[i].attack;
+                    if (p.life <= 0)
+                        MessageBox.Show("Game Over!");
+                }
+            }
+            #endregion
+
+        }
+
+        public class Animation
+        {
+            public static long RATE = 100;
+            public Bitmap bitmap;
+            public int row = 1;
+            public int col = 4;
+            public int max_frame = 4;
+            public int anm_rate = 1;    //表示放慢anm_rate倍播放动画
+            public int face = Comm.RIGHT;
+            public Animation(Bitmap b)
+            {
+                bitmap = b;
+                if (b != null)
+                    bitmap.SetResolution(resolution_value, resolution_value);
+            }
+
+            public void unload()
+            {
+                if (bitmap != null)
+                    bitmap = null;
+            }
+
+            public Bitmap get_bitmap(int frame,int face)
+            {
+                if (bitmap == null)
+                    return null;
+                if (frame >= max_frame)
+                    return null;
+                Rectangle rect = new Rectangle(
+                    bitmap.Width / 4 * (frame % 4),
+                    bitmap.Height / 4 * (face - 1),
+                    bitmap.Width / 4, 
+                    bitmap.Height / 4);
+                return bitmap.Clone(rect, bitmap.PixelFormat);
+            }
+
+            public void draw(Graphics g, int frame, int face, int x, int y)
+            {
+                Bitmap bitmap = get_bitmap(frame / anm_rate, face);
+                if (bitmap == null) return;
+                g.DrawImage(bitmap, x, y);
+            }
+
+        }
     }
 }

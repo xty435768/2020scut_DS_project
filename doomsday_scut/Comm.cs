@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Drawing;
 
 namespace doomsday_scut
 {
@@ -20,6 +21,12 @@ namespace doomsday_scut
         public static int DOWN = 1;
         public static int LEFT = 2;
         public static int RIGHT = 3;
+
+        public static Point UP_VECTOR = new Point(0, -1);
+        public static Point DOWN_VECTOR = new Point(0, 1);
+        public static Point LEFT_VECTOR = new Point(-1, 0);
+        public static Point RIGHT_VECTOR = new Point(1, 0);
+        public static Point[] DIRECTION_MAP = new Point[5] {new Point(0,0), DOWN_VECTOR, LEFT_VECTOR, RIGHT_VECTOR, UP_VECTOR };
 
         //npc status
         public static int ACTIVE_NPC = 1;

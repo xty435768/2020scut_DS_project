@@ -213,6 +213,21 @@
   <ItemGroup>
     <None Include="Resources\0215\action\勇士.PNG" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\0215\bullet.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\0215\bullet_down.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\0215\bullet_left.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\0215\bullet_right.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\0215\bullet_up.png" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
