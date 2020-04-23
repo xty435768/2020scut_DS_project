@@ -17,6 +17,7 @@ namespace doomsday_scut
             return (long)ts.TotalMilliseconds;
         }
 
+        public static int NO_DIRECTION = 0;
         public static int UP = 4;
         public static int DOWN = 1;
         public static int LEFT = 2;

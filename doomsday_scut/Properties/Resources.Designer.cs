@@ -253,6 +253,16 @@ namespace doomsday_scut.Properties {
         /// <summary>
         ///   查找 System.Drawing.Bitmap 类型的本地化资源。
         /// </summary>
+        internal static System.Drawing.Bitmap blue_liquid {
+            get {
+                object obj = ResourceManager.GetObject("blue_liquid", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   查找 System.Drawing.Bitmap 类型的本地化资源。
+        /// </summary>
         internal static System.Drawing.Bitmap bullet {
             get {
                 object obj = ResourceManager.GetObject("bullet", resourceCulture);
@@ -266,6 +276,26 @@ namespace doomsday_scut.Properties {
         internal static System.Drawing.Bitmap cha_girl1行 {
             get {
                 object obj = ResourceManager.GetObject("cha_girl1行", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   查找 System.Drawing.Bitmap 类型的本地化资源。
+        /// </summary>
+        internal static System.Drawing.Bitmap clip {
+            get {
+                object obj = ResourceManager.GetObject("clip", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   查找 System.Drawing.Bitmap 类型的本地化资源。
+        /// </summary>
+        internal static System.Drawing.Bitmap gold_key_64x64 {
+            get {
+                object obj = ResourceManager.GetObject("gold_key_64x64", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }
@@ -296,6 +326,16 @@ namespace doomsday_scut.Properties {
         internal static System.Drawing.Bitmap npc2_attack {
             get {
                 object obj = ResourceManager.GetObject("npc2_attack", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   查找 System.Drawing.Bitmap 类型的本地化资源。
+        /// </summary>
+        internal static System.Drawing.Bitmap red_liquid {
+            get {
+                object obj = ResourceManager.GetObject("red_liquid", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }
