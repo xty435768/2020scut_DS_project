@@ -21,8 +21,7 @@ namespace doomsday_scut
         {
             Game g = new Game();
             g.Show();
-            g.Draw();
-            this.Hide();
+            Hide();
         }
 
         private void help_about_Click(object sender, EventArgs e)

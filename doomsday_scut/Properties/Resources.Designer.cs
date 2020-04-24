@@ -73,16 +73,6 @@ namespace doomsday_scut.Properties {
         /// <summary>
         ///   查找 System.Drawing.Bitmap 类型的本地化资源。
         /// </summary>
-        internal static System.Drawing.Bitmap _1 {
-            get {
-                object obj = ResourceManager.GetObject("_1", resourceCulture);
-                return ((System.Drawing.Bitmap)(obj));
-            }
-        }
-        
-        /// <summary>
-        ///   查找 System.Drawing.Bitmap 类型的本地化资源。
-        /// </summary>
         internal static System.Drawing.Bitmap _10 {
             get {
                 object obj = ResourceManager.GetObject("_10", resourceCulture);
@@ -203,6 +193,16 @@ namespace doomsday_scut.Properties {
         /// <summary>
         ///   查找 System.Drawing.Bitmap 类型的本地化资源。
         /// </summary>
+        internal static System.Drawing.Bitmap _fighter_2_attack_big_knife {
+            get {
+                object obj = ResourceManager.GetObject("_fighter_2_attack_big_knife", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   查找 System.Drawing.Bitmap 类型的本地化资源。
+        /// </summary>
         internal static System.Drawing.Bitmap _fighter2 {
             get {
                 object obj = ResourceManager.GetObject("_fighter2", resourceCulture);
@@ -216,6 +216,16 @@ namespace doomsday_scut.Properties {
         internal static System.Drawing.Bitmap _fighter2_attack {
             get {
                 object obj = ResourceManager.GetObject("_fighter2_attack", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   查找 System.Drawing.Bitmap 类型的本地化资源。
+        /// </summary>
+        internal static System.Drawing.Bitmap _fighter2_attack_long {
+            get {
+                object obj = ResourceManager.GetObject("_fighter2_attack_long", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }
@@ -376,16 +386,6 @@ namespace doomsday_scut.Properties {
         internal static System.Drawing.Bitmap 小兵 {
             get {
                 object obj = ResourceManager.GetObject("小兵", resourceCulture);
-                return ((System.Drawing.Bitmap)(obj));
-            }
-        }
-        
-        /// <summary>
-        ///   查找 System.Drawing.Bitmap 类型的本地化资源。
-        /// </summary>
-        internal static System.Drawing.Bitmap 普通_攻击 {
-            get {
-                object obj = ResourceManager.GetObject("普通_攻击", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }
