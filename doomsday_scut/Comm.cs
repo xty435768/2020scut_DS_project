@@ -4,6 +4,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Drawing;
+using System.Data;
+using System.Data.SQLite;
 
 namespace doomsday_scut
 {
@@ -15,6 +17,12 @@ namespace doomsday_scut
             DateTime dt1 = new DateTime(1970, 1, 1);
             TimeSpan ts = DateTime.Now - dt1;
             return (long)ts.TotalMilliseconds;
+        }
+        
+        public static TimeSpan Time_span()
+        {
+            DateTime dt1 = new DateTime(1970, 1, 1);
+            return DateTime.Now - dt1;
         }
 
         public static int NO_DIRECTION = 0;
@@ -64,6 +72,24 @@ namespace doomsday_scut
                 Point abs_p = new Point(Math.Abs(p.X - (Math.Abs(p.X) > Math.Abs(p.Y) ? p.Y : p.X)), Math.Abs(p.Y - (Math.Abs(p.X) > Math.Abs(p.Y) ? p.Y : p.X)));
                 return vector2face(new Point((p.X - (Math.Abs(p.X) > Math.Abs(p.Y) ? p.Y : p.X)) / (abs_p.X == 0 ? 1 : abs_p.X), (p.Y - (Math.Abs(p.X) > Math.Abs(p.Y) ? p.Y : p.X)) / (abs_p.Y == 0 ? 1 : abs_p.Y)));
             }
+        }
+
+        public static DataTable sql_query(string command)
+        {
+            string path = @System.AppDomain.CurrentDomain.BaseDirectory + @"data.db";
+            SQLiteConnection cn = new SQLiteConnection("data source=" + path);
+            cn.Open();
+            SQLiteCommand cmd = new SQLiteCommand(command, cn);
+            cmd.CommandType = CommandType.Text;
+            SQLiteDataReader dReader = cmd.ExecuteReader();
+            DataTable dTable = new DataTable();
+            dTable.Load(dReader);
+            cn.Close();
+            return dTable;
+        }
+        public static int get_distance_square(Point p1,Point p2)
+        {
+            return Convert.ToInt32(Math.Pow(p1.X - p2.X, 2) + Math.Pow(p1.Y - p2.Y, 2));
         }
     }
 }

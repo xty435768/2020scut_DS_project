@@ -46,9 +46,13 @@ namespace doomsday_scut
             }
             else
             {
-                Dispose();
-                Application.Exit();
+                e.Cancel = false;
             }
+        }
+
+        private void Form1_FormClosed(object sender, FormClosedEventArgs e)
+        {
+            Application.Exit();
         }
     }
 }

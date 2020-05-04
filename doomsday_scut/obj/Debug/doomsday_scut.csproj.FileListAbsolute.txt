@@ -128,3 +128,5 @@ E:\学习资料\数据结构\Project\tomb_raider\doomsday_scut\bin\Debug\System.
 E:\学习资料\数据结构\Project\tomb_raider\doomsday_scut\bin\Debug\System.Numerics.Vectors.xml
 E:\学习资料\数据结构\Project\tomb_raider\doomsday_scut\bin\Debug\System.Runtime.CompilerServices.Unsafe.xml
 E:\学习资料\数据结构\Project\tomb_raider\doomsday_scut\obj\Debug\doomsday_scut.exe.config
+E:\学习资料\数据结构\Project\tomb_raider\doomsday_scut\obj\Debug\doomsday_scut.level_jumper.resources
+E:\学习资料\数据结构\Project\tomb_raider\doomsday_scut\obj\Debug\doomsday_scut.level_info.resources

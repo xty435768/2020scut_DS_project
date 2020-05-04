@@ -23,6 +23,7 @@ namespace doomsday_scut
         List<Npc> npc;
         List<Bullet> bullet;
         bool start = true;
+        DateTime this_level_datetime = DateTime.Now;
         static int resolution_value = 64;
         static double resolution_rate = 96.0 / resolution_value;   //只改分母
         struct pic
@@ -46,18 +47,40 @@ namespace doomsday_scut
 
         private void Game_KeyDown(object sender, KeyEventArgs e)
         {
-            Point p = Player.key_ctrl(player, map, npc, bullet, e);
-            if(p!=new Point(-1,-1))
+            Player p = player[Player.current_player];
+            if ((ModifierKeys & Keys.Control) != 0 &&
+                (ModifierKeys & Keys.Alt) != 0 &&
+                (ModifierKeys & Keys.Shift) != 0 &&
+                 e.KeyCode == Keys.L)
             {
-                x_textbox.Text = p.X.ToString();
-                y_textbox.Text = p.Y.ToString();
+                Map m = map[Map.current_map];
+                level_jumper l = new level_jumper();
+                l.ShowDialog();
+                if (l.DialogResult == DialogResult.OK)
+                {
+                    level_goto(l.result, "", m);
+                    return;
+                }
             }
-            if (player[0].trap_2_slow_down_enable && !player[0].trap_2_slow_down_effective)
+            
+            Point point = Player.key_ctrl(player, map, npc, bullet, e);
+            if(point != new Point(-1,-1))
+            {
+                x_textbox.Text = point.X.ToString();
+                y_textbox.Text = point.Y.ToString();
+            }
+            if (p.trap_2_slow_down_enable && !p.trap_2_slow_down_effective)
             {
                 traptimer_2_slow_down.Start();
-                player[0].speed /= 2;
-                player[0].trap_2_slow_down_effective = true;
+                p.speed /= 2;
+                p.trap_2_slow_down_effective = true;
             }
+            if (p.trap_3_invalidate_enable && !p.trap_3_invalidate_effective)
+            {
+                traptimer_3_invalidate.Start();
+                p.trap_3_invalidate_effective = true;
+            }
+            label3.Text = "label3";
         }
 
         private void Game_Load(object sender, EventArgs e)
@@ -88,37 +111,62 @@ namespace doomsday_scut
                 new Bitmap(Properties.Resources._fighter2_attack),
                 new Bitmap(Properties.Resources._fighter2_attack_long)
             };
-            player[0] = new Player(576, 240, Comm.DOWN, player_ani) { figure = new Bitmap(Properties.Resources._fighter2) };
+            DataRow player_table = Comm.sql_query("select * from player_data where map_id="+Map.current_map.ToString()+";").Rows[0];
+            //player[0] = new Player(1440, 192, Comm.DOWN, player_ani) { figure = new Bitmap(Properties.Resources._fighter2) };
+            //player[0].figure.SetResolution(resolution_value, resolution_value);
+            //player[0].is_active = 1;
+            //player[0].weapon_restriction = 3;
+
+            player[0] = new Player(Convert.ToInt32(player_table["pixel_position_x"]), Convert.ToInt32(player_table["pixel_position_y"]), Convert.ToInt32(player_table["face"]), player_ani)
+            { weapon_restriction = Convert.ToInt32(player_table["weapon_restriction"]), figure = new Bitmap(Properties.Resources._fighter2) };
             player[0].figure.SetResolution(resolution_value, resolution_value);
-            player[0].is_active = 1;
-            player[0].weapon_restriction = 2;
 
-            npc.Add(new Npc(240, 240, new Bitmap(Properties.Resources._npc2), Comm.ACTIVE_NPC, Comm.DOWN, new Bitmap(Properties.Resources.npc2_attack))
+            DataTable npc_table = Comm.sql_query("select * from npc_data where map_id=" + Map.current_map.ToString() + ";");
+
+            for (int i = 0; i < npc_table.Rows.Count; i++)
             {
-                map = 0,
-                idle_walk_direction = Comm.LEFT,
-                idle_walk_time = 20
+                Bitmap b, b_ani;
+                int threshold = 0;
+                switch (Convert.ToInt32(npc_table.Rows[i]["attack_type"]))
+                {
+                    case 2: b = new Bitmap(Properties.Resources._npc2); b_ani = new Bitmap(Properties.Resources.npc2_attack); threshold = 1; break;
+                    case 3: b = new Bitmap(Properties.Resources._npc3); b_ani = new Bitmap(Properties.Resources.npc3_attack); threshold = 3; break;
+                    
+                    default: b = null; b_ani = null; break;
+                }
+                npc.Add(new Npc(Convert.ToInt32(npc_table.Rows[i]["pixel_position_x"]),
+                    Convert.ToInt32(npc_table.Rows[i]["pixel_position_y"]), b,
+                    Convert.ToInt32(npc_table.Rows[i]["face"]),
+                    Convert.ToInt32(npc_table.Rows[i]["active_type"]), b_ani)
+                { map = Map.current_map, idle_walk_direction = Convert.ToInt32(npc_table.Rows[i]["idle_walk_direction"]),idle_walk_time = Convert.ToInt32(npc_table.Rows[i]["idle_walk_time"]),launch_attack_threshold = threshold});
+            }
 
-            });
-
-            //npc.Add(new Npc(600, 240, new Bitmap(Properties.Resources._npc_static_3), Comm.DOWN, Comm.STATIC_NPC, null)
+            //npc.Add(new Npc(240, 240, new Bitmap(Properties.Resources._npc2), Comm.ACTIVE_NPC, Comm.DOWN, new Bitmap(Properties.Resources.npc2_attack))
             //{
-            //    map = 0
+            //    map = 0,
+            //    idle_walk_direction = Comm.LEFT,
+            //    idle_walk_time = 20
+
             //});
 
-            npc.Add(new Npc(192, 240, new Bitmap(Properties.Resources._npc2), Comm.ACTIVE_NPC, Comm.DOWN, new Bitmap(Properties.Resources.npc2_attack))
-            {
-                map = 0,
-                idle_walk_direction = Comm.LEFT,
-                idle_walk_time = 10
-            });
+            ////npc.Add(new Npc(600, 240, new Bitmap(Properties.Resources._npc_static_3), Comm.DOWN, Comm.STATIC_NPC, null)
+            ////{
+            ////    map = 0
+            ////});
 
-            npc.Add(new Npc(144, 240, new Bitmap(Properties.Resources._npc2), Comm.ACTIVE_NPC, Comm.DOWN, new Bitmap(Properties.Resources.npc2_attack))
-            {
-                map = 0,
-                idle_walk_direction = Comm.LEFT,
-                idle_walk_time = 30
-            });
+            //npc.Add(new Npc(192, 240, new Bitmap(Properties.Resources._npc2), Comm.ACTIVE_NPC, Comm.DOWN, new Bitmap(Properties.Resources.npc2_attack))
+            //{
+            //    map = 0,
+            //    idle_walk_direction = Comm.LEFT,
+            //    idle_walk_time = 10
+            //});
+
+            //npc.Add(new Npc(144, 240, new Bitmap(Properties.Resources._npc2), Comm.ACTIVE_NPC, Comm.DOWN, new Bitmap(Properties.Resources.npc2_attack))
+            //{
+            //    map = 0,
+            //    idle_walk_direction = Comm.LEFT,
+            //    idle_walk_time = 30
+            //});
 
         }
 
@@ -241,6 +289,16 @@ namespace doomsday_scut
                 current_anm = index;
                 anm_frame = 0;
             }
+
+            public static Point coordinate_pixel_adapter(int x,int y)
+            {
+                return new Point(x / Convert.ToInt32(Convert.ToDouble(32) * resolution_rate), y / Convert.ToInt32(Convert.ToDouble(32) * resolution_rate) + 1);
+            }
+
+            public static Point coordinate_pixel_adapter(Point p)
+            {
+                return new Point(p.X * Convert.ToInt32(Convert.ToDouble(32) * resolution_rate), (p.Y - 1) * Convert.ToInt32(Convert.ToDouble(32) * resolution_rate));
+            }
         }
 
         public class Player : Father
@@ -256,7 +314,11 @@ namespace doomsday_scut
             public int clip_size = 30;
             public static int maximum_clip_size = 30;
             public int current_weapon = 0;
+            public int normal_knife_attack = 30;
+            public int advanced_knife_attack = 50;
             public int weapon_restriction;
+            public int keys_got = 0;
+            public int to_next_map = -1;
 
             public Bitmap figure;                   //figure picture
             public static int current_player = 0;   //current player
@@ -266,7 +328,11 @@ namespace doomsday_scut
             public bool trap_2_slow_down_effective = false;
             public int trap_2_time = 10;
             public int trap_2_count = 0;
-            public int normal_knife_attack = 30;
+
+            public bool trap_3_invalidate_enable = false;
+            public bool trap_3_invalidate_effective = false;
+            public int trap_3_time = 10;
+            public int trap_3_count = 0;
 
             public Player(int x,int y,int f,List<Bitmap> animation):base(x,y,f)
             {
@@ -297,16 +363,17 @@ namespace doomsday_scut
                     if (Comm.Time() - p.last_shooting_time <= p.bullet_move_interval)
                         return nullpoint;
                 //move
-                if (e.KeyCode == Keys.Up /*&& Map.can_through(map,p.coordinate_x,p.coordinate_y - 1)*/) { if (!p.trap_2_slow_down_enable && p.y % Convert.ToInt32(Convert.ToDouble(32) * resolution_rate) != 0) p.y -= p.speed / 2; else p.y -= p.speed; }
+                if (e.KeyCode == Keys.Up /*&& Map.can_through(map, p.coordinate_x, p.coordinate_y - 1)*/) { if (!p.trap_2_slow_down_enable && p.y % Convert.ToInt32(Convert.ToDouble(32) * resolution_rate) != 0) p.y -= p.speed / 2; else p.y -= p.speed; }
                 else if (e.KeyCode == Keys.Down /*&& Map.can_through(map, p.coordinate_x, p.coordinate_y + 1)*/) { if (!p.trap_2_slow_down_enable && p.y % Convert.ToInt32(Convert.ToDouble(32) * resolution_rate) != 0) p.y += p.speed / 2; else p.y += p.speed; }
                 else if (e.KeyCode == Keys.Left /*&& Map.can_through(map, p.coordinate_x - 1, p.coordinate_y)*/) { if (!p.trap_2_slow_down_enable && p.x % Convert.ToInt32(Convert.ToDouble(32) * resolution_rate) != 0) p.x -= p.speed / 2; else p.x -= p.speed; }
                 else if (e.KeyCode == Keys.Right /*&& Map.can_through(map, p.coordinate_x + 1, p.coordinate_y)*/) { if (!p.trap_2_slow_down_enable && p.x % Convert.ToInt32(Convert.ToDouble(32) * resolution_rate) != 0) p.x += p.speed / 2; else p.x += p.speed; }
-                else if (e.KeyCode == Keys.Space && Map.can_through(map, p.coordinate_x + Comm.DIRECTION_MAP[p.face].X, p.coordinate_y + Comm.DIRECTION_MAP[p.face].Y) && p.clip_size > 0)
+                else if (e.KeyCode == Keys.Space && Map.can_through(map, p.coordinate_x + Comm.DIRECTION_MAP[p.face].X, p.coordinate_y + Comm.DIRECTION_MAP[p.face].Y) && (p.current_weapon != 1 || p.clip_size > 0) && !p.trap_3_invalidate_enable)
                 {
                     switch (p.current_weapon)
                     {
                         case 0: for (int i = 0; i < npc.Count; i++) if (npc[i].coordinate_x == p.coordinate_x && npc[i].coordinate_y == p.coordinate_y) { npc[i].life -= p.normal_knife_attack; }  break;
                         case 1: bullet.Add(new Bullet(p.x, p.y, 30, p.face)); p.clip_size -= 1; break;
+                        case 2: for (int i = 0; i < npc.Count; i++) if (Math.Abs(npc[i].coordinate_x - p.coordinate_x) < 2 && Math.Abs(npc[i].coordinate_y - p.coordinate_y) < 2) { npc[i].life -= p.normal_knife_attack; } break;
                         default: break;
                     }
                     p.play_anm(p.current_weapon);
@@ -320,10 +387,21 @@ namespace doomsday_scut
                 //update coordinates
                 p.coordinate_x = p.x / Convert.ToInt32(Convert.ToDouble(32) * resolution_rate);
                 p.coordinate_y = p.y / Convert.ToInt32(Convert.ToDouble(32) * resolution_rate) + 1;
-                if(m.mapdata_string[p.coordinate_y * m.map_width + p.coordinate_x] == '2' && !p.trap_2_slow_down_enable)
+                char next_step_type = m.mapdata_string[p.coordinate_y * m.map_width + p.coordinate_x];
+                if (next_step_type == '2' && !p.trap_2_slow_down_enable)
                 {
                     p.trap_2_slow_down_enable = true;   //减速buff激活
-                    System.Diagnostics.Debug.Write("trap 2!");
+                    System.Diagnostics.Debug.Write("trap 2!\n");
+                }
+                if (next_step_type == '3' && !p.trap_3_invalidate_enable)
+                {
+                    p.trap_3_invalidate_enable = true;   //去武器buff激活
+                    System.Diagnostics.Debug.Write("trap 3!\n");
+                }
+                if (next_step_type == '5' && !p.trap_3_invalidate_enable)
+                {
+                    p.to_next_map = 6;
+                    System.Diagnostics.Debug.Write("pass!\n");
                 }
                 for (int i = 0; i < m.clip_in_map.Count; i++)
                 {
@@ -341,7 +419,14 @@ namespace doomsday_scut
                         m.blue_liquid_in_map[i].visible = false;
                     }
                 }
-
+                for (int i = 0; i < m.keys_in_map.Count; i++)
+                {
+                    if (m.keys_in_map[i].coordinate_x == p.coordinate_x && (m.keys_in_map[i].coordinate_y == p.coordinate_y || m.keys_in_map[i].coordinate_y - p.coordinate_y == -1))
+                    {
+                        p.keys_got++;
+                        m.keys_in_map[i].visible = false;
+                    }
+                }
                 //animation frame
                 p.anm_frame += 1;
                 if (p.anm_frame >= int.MaxValue) p.anm_frame = 0;
@@ -370,8 +455,10 @@ namespace doomsday_scut
                 }
                 //draw lifebar
                 g.FillRectangle(new SolidBrush(lifebar_color(totallife, p.life)), lifebar_position(totallife, p.life, map_sx + p.x, map_sy + p.y));
-                if(p.trap_2_slow_down_enable)
+                if (p.trap_2_slow_down_enable)
                     g.FillRectangle(new SolidBrush(Color.Blue), lifebar_position(p.trap_2_time, p.trap_2_time-p.trap_2_count, map_sx + p.x, map_sy + p.y, 5, -15));
+                if(p.trap_3_invalidate_enable)
+                    g.FillRectangle(new SolidBrush(Color.Azure), lifebar_position(p.trap_3_time, p.trap_3_time - p.trap_3_count, map_sx + p.x, map_sy + p.y, 5, -25));
             }
 
             public static void key_change_player(Player[] player)
@@ -477,19 +564,25 @@ namespace doomsday_scut
             public static Bitmap wall;
             public static Bitmap road;
             public static Bitmap trap_slow;
+            public static Bitmap trap_invalidate;
+            public static Bitmap next_map_area;
             public static byte[] wallValue;
             public static byte[] roadValue;
             public static Rectangle wall_r = new Rectangle(64, 0, 32, 32);
             public static Rectangle road_r = new Rectangle(0, 0, 32, 32);
             public static Rectangle trap_slow_r = new Rectangle(128, 0, 32, 32);
+            public static Rectangle trap_invalidate_r = new Rectangle(192, 0, 32, 32);
+            public static Rectangle next_map_area_r = new Rectangle(448, 0, 32, 32);
             public string mapdata_string;
             public int map_width;
             public int map_height;
             public int this_map_id;
             public static Bitmap blue_liquid = new Bitmap(Properties.Resources.blue_liquid);
             public static Bitmap clip = new Bitmap(Properties.Resources.clip);
+            public static Bitmap key = new Bitmap(Properties.Resources.gold_key_64x64);
             public List<Item> blue_liquid_in_map;
             public List<Item> clip_in_map;
+            public List<Item> keys_in_map;
 
             public Map(Bitmap bmp)
             {
@@ -499,18 +592,10 @@ namespace doomsday_scut
             public Map(int id)
             {
                 this_map_id = id;
-                string path = @System.AppDomain.CurrentDomain.BaseDirectory+@"data.db";
-                SQLiteConnection cn = new SQLiteConnection("data source=" + path);
-                cn.Open();
-                SQLiteCommand cmd = new SQLiteCommand("select * from map_data where map_id = " + Convert.ToString(this_map_id) + ";", cn);
-                cmd.CommandType = CommandType.Text;
-                SQLiteDataReader dReader = cmd.ExecuteReader();
-                DataTable dTable = new DataTable();
-                dTable.Load(dReader);
+                DataTable dTable = Comm.sql_query("select * from map_data where map_id = " + Convert.ToString(this_map_id) + ";");
                 mapdata_string = dTable.Rows[0]["data"].ToString();
                 map_width = Convert.ToInt32(dTable.Rows[0]["width"].ToString());
                 map_height = Convert.ToInt32(dTable.Rows[0]["height"].ToString());
-                cn.Close();
 
                 //以下三行为测试通过内存修改来初始化地图，但发现效率提升并不大，故暂时废弃
                 //wallValue = bitmap2byte(wall, true);
@@ -518,13 +603,27 @@ namespace doomsday_scut
                 //bitmap = mapBuild(bmp, mapdata_matrix);
                 bitmap = LoadImage(id);
                 bitmap.SetResolution(resolution_value, resolution_value);
-                initialize_map_item();
+                key.SetResolution(resolution_value, resolution_value);
+                //initialize_map_item();
             }
 
             public void initialize_map_item()
             {
                 blue_liquid_in_map = new List<Item>();
                 clip_in_map = new List<Item>();
+                keys_in_map = new List<Item>();
+                DataTable key_table = Comm.sql_query("select * from keys_data where map_id=" + current_map.ToString() + ";");
+                for (int i = 0; i < key_table.Rows.Count; i++)
+                {
+                    keys_in_map.Add(new Item(new Point(Convert.ToInt32(key_table.Rows[i]["pixel_position_x"]), Convert.ToInt32(key_table.Rows[i]["pixel_position_y"])), true));
+                }
+            }
+
+            public void dispose_map_item()
+            {
+                blue_liquid_in_map = null;
+                clip_in_map = null;
+                keys_in_map = null;
             }
 
             public static byte[] bitmap2byte(Bitmap bmp, bool is_unlock)
@@ -647,10 +746,16 @@ namespace doomsday_scut
                     if (m.blue_liquid_in_map[i] == null) continue;
                     g.DrawImage(blue_liquid, map_sx + m.blue_liquid_in_map[i].x, map_sy + m.blue_liquid_in_map[i].y + Convert.ToInt32(32.0 * resolution_rate));
                 }
+                for (int i = 0; i < m.keys_in_map.Count; i++)
+                {
+                    if (m.keys_in_map[i] == null) continue;
+                    g.DrawImage(key, map_sx + m.keys_in_map[i].x, map_sy + m.keys_in_map[i].y + Convert.ToInt32(32.0 * resolution_rate));
+                }
                 g.DrawString("玩家坐标：" + Convert.ToString(p.coordinate_x) + "," + Convert.ToString(p.coordinate_y), new Font("Arial", 12, FontStyle.Bold), Brushes.White, new PointF(10, 10));
                 g.DrawString("玩家像素坐标：" + Convert.ToString(p.x) + "," + Convert.ToString(p.y), new Font("Arial", 12, FontStyle.Bold), Brushes.White, new PointF(10, 30));
                 g.DrawString("子弹：" + Convert.ToString(p.clip_size) + "/" + Convert.ToString(Player.maximum_clip_size), new Font("Arial", 12, FontStyle.Bold), Brushes.White, new PointF(10, 70));
-                g.DrawString("当前武器编号：" + Convert.ToString(p.current_weapon) , new Font("Arial", 12, FontStyle.Bold), Brushes.White, new PointF(10, 90));
+                g.DrawString("当前武器编号：" + Convert.ToString(p.current_weapon), new Font("Arial", 12, FontStyle.Bold), Brushes.White, new PointF(10, 90));
+                g.DrawString("获得钥匙：" + Convert.ToString(p.keys_got) + "/" + (m.keys_in_map.Count + p.keys_got), new Font("Arial", 12, FontStyle.Bold), Brushes.White, new PointF(10, 110));
             }
 
             public static void change_map(Map[] map, Player[] player, Npc[] npc, int newindex, int x, int y, int face)
@@ -790,6 +895,8 @@ namespace doomsday_scut
                 wall = map_resource.Clone(wall_r, map_resource.PixelFormat);
                 road = map_resource.Clone(road_r, map_resource.PixelFormat);
                 trap_slow = map_resource.Clone(trap_slow_r, map_resource.PixelFormat);
+                trap_invalidate = map_resource.Clone(trap_invalidate_r, map_resource.PixelFormat);
+                next_map_area = map_resource.Clone(next_map_area_r, map_resource.PixelFormat);
                 for (int i = 0; i < bmp.Height; i++)
                 {
                     for (int j = 0; j < bmp.Width; j++)
@@ -809,6 +916,14 @@ namespace doomsday_scut
                         {
                             bmp.SetPixel(j, i, trap_slow.GetPixel(j % 32, i % 32));
                             //bmp.SetPixel(j, i, Color.Black);
+                        }
+                        else if(mapdata_matrix[i / 32, j / 32] == 3)
+                        {
+                            bmp.SetPixel(j, i, trap_invalidate.GetPixel(j % 32, i % 32));
+                        }
+                        else if(mapdata_matrix[i / 32, j / 32] == 5)
+                        {
+                            bmp.SetPixel(j, i, next_map_area.GetPixel(j % 32, i % 32));
                         }
                         else 
                         {
@@ -837,7 +952,7 @@ namespace doomsday_scut
             public long last_attack_time = 0;
             public long attack_interval = 500;
             public int speed = Convert.ToInt32(Convert.ToDouble(32 * resolution_rate));
-            public int idle_walk_direction = Comm.DOWN;
+            public int idle_walk_direction = Comm.LEFT;
             public int idle_walk_time = 0;
             public int idle_walk_time_now = 0;
             public static int totallife = 150;
@@ -847,7 +962,7 @@ namespace doomsday_scut
             public int launch_attack_threshold = 1;
 
             //load
-            public Npc(int x, int y, Bitmap b,int f, int s,Bitmap animation):base(x,y,f)
+            public Npc(int x, int y, Bitmap b,int face, int s,Bitmap animation):base(x,y,face)
             {
                 bitmap = b;
                 status = s;
@@ -972,13 +1087,16 @@ namespace doomsday_scut
                     //    direction = Comm.UP;
                     //else 
                     //    direction = Comm.LEFT;
-                    if (0 <= idle_walk_time_now && idle_walk_time_now < idle_walk_time)
-                        direction = Comm.DOWN;
-                    else if (-idle_walk_time <= idle_walk_time_now && idle_walk_time_now < 0)
-                        direction = Comm.UP;
+                    //if (0 <= idle_walk_time_now && idle_walk_time_now < idle_walk_time)
+                    //    direction = Comm.DOWN;
+                    //else if (-idle_walk_time <= idle_walk_time_now && idle_walk_time_now < 0)
+                    //    direction = Comm.UP;
+                    //else
+                    //    direction = Comm.UP;
+                    if (idle_walk_time_now >= 0)
+                        direction = idle_walk_direction;
                     else
-                        direction = Comm.UP;
-
+                        direction = Comm.opposite_direction(idle_walk_direction);
                     walk(map, direction, true);
                     if (idle_walk_time_now >= 0)
                     {
@@ -1051,14 +1169,15 @@ namespace doomsday_scut
                     g.DrawImage(bitmap, map_sx + x - Convert.ToInt32(16.0 * resolution_rate), map_sy + y);
                 else
                     g.DrawImage(bitmap, map_sx + x, map_sy + y - Convert.ToInt32(16.0 * resolution_rate));
-                g.DrawString("子弹头坐标：" + Convert.ToString(p.X) + "," + Convert.ToString(p.Y), new Font("Arial", 12, FontStyle.Bold), Brushes.White, new PointF(10, 50));
+                //g.DrawString("子弹头坐标：" + Convert.ToString(p.X) + "," + Convert.ToString(p.Y), new Font("Arial", 12, FontStyle.Bold), Brushes.White, new PointF(10, 50));
             }
 
             public void bullet_move(Map[] map)
             {
                 if (Comm.Time() - last_move_time <= move_interval)
                     return;
-                if(Map.can_through(map,coordinate_x+Comm.DIRECTION_MAP[face].X,coordinate_y+Comm.DIRECTION_MAP[face].Y))
+                Point head_coordinate = get_bullet_head_coordinate();
+                if (Map.can_through(map,head_coordinate.X+Comm.DIRECTION_MAP[face].X,head_coordinate.Y+Comm.DIRECTION_MAP[face].Y))
                 {
                     x += (Comm.DIRECTION_MAP[face].X * speed);
                     y += (Comm.DIRECTION_MAP[face].Y * speed);
@@ -1157,15 +1276,30 @@ namespace doomsday_scut
 
         private void traptimer_2_slow_down_Tick_1(object sender, EventArgs e)
         {
-            if (!player[0].trap_2_slow_down_enable) return;
-            player[0].trap_2_count += 1;
-            if (player[0].trap_2_count == player[0].trap_2_time)
+            Player p = player[Player.current_player];
+            if (!p.trap_2_slow_down_enable) return;
+            p.trap_2_count += 1;
+            if (p.trap_2_count == p.trap_2_time)
             {
                 traptimer_2_slow_down.Stop();
-                player[0].speed *= 2;
-                player[0].trap_2_count = 0;
-                player[0].trap_2_slow_down_enable = false;
-                player[0].trap_2_slow_down_effective = false;
+                p.speed *= 2;
+                p.trap_2_count = 0;
+                p.trap_2_slow_down_enable = false;
+                p.trap_2_slow_down_effective = false;
+            }
+        }
+
+        private void traptimer_3_invalidate_Tick(object sender, EventArgs e)
+        {
+            Player p = player[Player.current_player];
+            if (!p.trap_3_invalidate_enable) return;
+            p.trap_3_count += 1;
+            if (p.trap_3_count == p.trap_3_time)
+            {
+                traptimer_3_invalidate.Stop();
+                p.trap_3_count = 0;
+                p.trap_3_invalidate_enable = false;
+                p.trap_3_invalidate_effective = false;
             }
         }
 
@@ -1174,12 +1308,13 @@ namespace doomsday_scut
             Player p = player[Player.current_player];
             Map m = map[Map.current_map];
             p.bullet_move(map,bullet);
+            
             #region 检测子弹与npc的碰撞
             for (int i = 0; i < bullet.Count; i++)
             {
                 for (int j = 0; j < npc.Count; j++)
                 {
-                    if(bullet[i].get_bullet_head_coordinate() == npc[j].getCoordinatePoint() && npc[j].status == Comm.ACTIVE_NPC)
+                    if(Comm.get_distance_square(bullet[i].get_bullet_head_coordinate() , npc[j].getCoordinatePoint()) <= 2 && npc[j].status == Comm.ACTIVE_NPC)
                     {
                         npc[j].life -= bullet[i].attack;
                         bullet[i].disabled = true;
@@ -1200,6 +1335,10 @@ namespace doomsday_scut
             {
                 if (!m.blue_liquid_in_map[i].visible) m.blue_liquid_in_map.Remove(m.blue_liquid_in_map[i]);
             }
+            for (int i = m.keys_in_map.Count - 1; i >= 0; i--)
+            {
+                if (!m.keys_in_map[i].visible) m.keys_in_map.Remove(m.keys_in_map[i]);
+            }
             Draw();
         }
 
@@ -1214,10 +1353,18 @@ namespace doomsday_scut
                     continue;
                 npc[i].timer_logic(map, player);
             }
-
-            #region npc对pcc的攻击
             Player p = player[Player.current_player];
             Map m = map[Map.current_map];
+
+            #region 判断过关
+            if (m.keys_in_map.Count != 0) p.to_next_map = -1;
+            if (p.to_next_map >= 0 && m.keys_in_map.Count == 0)
+            {
+                level_goto(p.to_next_map, "Level " + Map.current_map + ": Completed!", m, "Next level: Level " + p.to_next_map);
+            }
+            #endregion
+
+            #region npc对pcc的攻击
             for (int i = 0; i < npc.Count; i++)
             {
                 if (p.getCoordinatePoint() == npc[i].getCoordinatePoint())
@@ -1228,12 +1375,7 @@ namespace doomsday_scut
                     npc[i].last_attack_time = Comm.Time();
                     if (p.life <= 0)
                     {
-                        timer1.Stop();
-                        timer_bullet.Stop();
-                        MessageBox.Show("Game Over!");
-                        initialize_game();
-                        timer1.Start();
-                        timer_bullet.Start();
+                        level_goto(Map.current_map, "Game Over!");
                     }
                 }
             }
@@ -1268,9 +1410,25 @@ namespace doomsday_scut
             }
         }
 
+        private void level_goto(int level,string info = "", Map m = null, string next_level_info = "")
+        {
+            timer1.Stop();
+            timer_bullet.Stop();
+            if (info.Length != 0)
+                new level_info(3, DateTime.Now - this_level_datetime, info, next_level_info).ShowDialog();
+                //MessageBox.Show(info);
+            if (m != null)
+                m.dispose_map_item();
+            Map.current_map = level;
+            initialize_game();
+            this_level_datetime = DateTime.Now;
+            timer1.Start();
+            timer_bullet.Start();
+        }
+
         private void button2_Click(object sender, EventArgs e)
         {
-
+            label3.Text = "processing...";
             string path = @System.AppDomain.CurrentDomain.BaseDirectory + @"data.db";
             SQLiteConnection cn = new SQLiteConnection("data source=" + path);
             cn.Open();
@@ -1294,7 +1452,7 @@ namespace doomsday_scut
             }
 
             SQLiteCommand cmd1 = cn.CreateCommand();
-            cmd1.CommandText = String.Format("UPDATE map_data SET data = '"+ ans +"',map_image_data = (@0) WHERE map_id = " + Convert.ToString(Map.current_map) + ";");
+            cmd1.CommandText = string.Format("UPDATE map_data SET data = '"+ ans +"',map_image_data = (@0) WHERE map_id = " + Convert.ToString(Map.current_map) + ";");
             SQLiteParameter param = new SQLiteParameter("@0", System.Data.DbType.Binary);
 
             param.Value = Map.ImageToByte(Map.string2bitmap(ans, map[Map.current_map].map_width, map[Map.current_map].map_height), System.Drawing.Imaging.ImageFormat.Png);
@@ -1302,7 +1460,7 @@ namespace doomsday_scut
             cmd1.ExecuteNonQuery();
 
             cn.Close();
-            MessageBox.Show("Done!");
+            label3.Text = "Done!";
         }
 
     }

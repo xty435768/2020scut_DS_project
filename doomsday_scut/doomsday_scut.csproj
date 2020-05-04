@@ -103,6 +103,18 @@
     <Compile Include="Game.Designer.cs">
       <DependentUpon>Game.cs</DependentUpon>
     </Compile>
+    <Compile Include="level_info.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="level_info.Designer.cs">
+      <DependentUpon>level_info.cs</DependentUpon>
+    </Compile>
+    <Compile Include="level_jumper.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="level_jumper.Designer.cs">
+      <DependentUpon>level_jumper.cs</DependentUpon>
+    </Compile>
     <Compile Include="ProcessBar.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -117,6 +129,12 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Game.resx">
       <DependentUpon>Game.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="level_info.resx">
+      <DependentUpon>level_info.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="level_jumper.resx">
+      <DependentUpon>level_jumper.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="ProcessBar.resx">
       <DependentUpon>ProcessBar.cs</DependentUpon>
@@ -264,6 +282,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\0215\gold_key_64x64.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\0215\origin\4.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
