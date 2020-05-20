@@ -130,3 +130,11 @@ E:\学习资料\数据结构\Project\tomb_raider\doomsday_scut\bin\Debug\System.
 E:\学习资料\数据结构\Project\tomb_raider\doomsday_scut\obj\Debug\doomsday_scut.exe.config
 E:\学习资料\数据结构\Project\tomb_raider\doomsday_scut\obj\Debug\doomsday_scut.level_jumper.resources
 E:\学习资料\数据结构\Project\tomb_raider\doomsday_scut\obj\Debug\doomsday_scut.level_info.resources
+E:\学习资料\数据结构\Project\tomb_raider\doomsday_scut\bin\Debug\Interop.WMPLib.dll
+E:\学习资料\数据结构\Project\tomb_raider\doomsday_scut\bin\Debug\AxInterop.WMPLib.dll
+E:\学习资料\数据结构\Project\tomb_raider\doomsday_scut\obj\Debug\Interop.WMPLib.dll
+E:\学习资料\数据结构\Project\tomb_raider\doomsday_scut\obj\Debug\AxInterop.WMPLib.dll
+E:\学习资料\数据结构\Project\tomb_raider\doomsday_scut\obj\Debug\doomsday_scut.csproj.ResolveComReference.cache
+E:\学习资料\数据结构\Project\tomb_raider\doomsday_scut\obj\Debug\doomsday_scut.BGM_Setting.resources
+E:\学习资料\数据结构\Project\tomb_raider\doomsday_scut\obj\Debug\doomsday_scut.level_choose.resources
+E:\学习资料\数据结构\Project\tomb_raider\doomsday_scut\obj\Debug\doomsday_scut.Help.resources

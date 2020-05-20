@@ -129,3 +129,4 @@ E:\学习资料\数据结构\Project\tomb_raider\doomsday_scut\bin\Release\Syste
 E:\学习资料\数据结构\Project\tomb_raider\doomsday_scut\bin\Release\System.Runtime.CompilerServices.Unsafe.xml
 E:\学习资料\数据结构\Project\tomb_raider\doomsday_scut\obj\Release\doomsday_scut.exe.config
 E:\学习资料\数据结构\Project\tomb_raider\doomsday_scut\obj\Release\doomsday_scut.level_jumper.resources
+E:\学习资料\数据结构\Project\tomb_raider\doomsday_scut\obj\Release\doomsday_scut.level_info.resources

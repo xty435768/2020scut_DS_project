@@ -12,6 +12,7 @@ using System.Runtime.InteropServices;
 using System.IO;
 using System.Data.SQLite;
 using System.Threading;
+using System.Media;
 
 namespace doomsday_scut
 {
@@ -26,6 +27,9 @@ namespace doomsday_scut
         DateTime this_level_datetime = DateTime.Now;
         static int resolution_value = 64;
         static double resolution_rate = 96.0 / resolution_value;   //只改分母
+        SoundPlayer sp = new SoundPlayer();
+        bool game_running = true;
+        
         struct pic
         {
             public string s;
@@ -43,6 +47,8 @@ namespace doomsday_scut
         {
             InitializeComponent();
             SetStyle(ControlStyles.OptimizedDoubleBuffer | ControlStyles.ResizeRedraw | ControlStyles.AllPaintingInWmPaint, true);
+            axWindowsMediaPlayer1.URL = "bgm.mp3";
+            axWindowsMediaPlayer1.settings.mute = true;
         }
 
         private void Game_KeyDown(object sender, KeyEventArgs e)
@@ -58,11 +64,17 @@ namespace doomsday_scut
                 l.ShowDialog();
                 if (l.DialogResult == DialogResult.OK)
                 {
-                    level_goto(l.result, "", m);
+                    level_goto(l.result, new TimeSpan(), "", m);
                     return;
                 }
             }
-            
+            if(e.KeyCode == Keys.F2)
+            {
+                using (BGM_Setting b = new BGM_Setting() { player = axWindowsMediaPlayer1 })
+                {
+                    b.ShowDialog();
+                }
+            }
             Point point = Player.key_ctrl(player, map, npc, bullet, e);
             if(point != new Point(-1,-1))
             {
@@ -88,12 +100,8 @@ namespace doomsday_scut
             map = new Map[10];
             ProcessBar myprocessbar = new ProcessBar("Loading...", "Loading maps...");
             myprocessbar.Show();
-            for (int i = 0; i < 10; i++)
-            {
-                map[i] = new Map(i);
-                myprocessbar.setLabelText("Loading maps(" + Convert.ToString(i + 1) + "/10)...");
-                myprocessbar.Refresh();
-            }
+            myprocessbar.setLabelText("Loading maps...");
+            map[Map.current_map] = new Map(Map.current_map);
             myprocessbar.Hide();
             initialize_game();
             Draw();
@@ -112,14 +120,10 @@ namespace doomsday_scut
                 new Bitmap(Properties.Resources._fighter2_attack_long)
             };
             DataRow player_table = Comm.sql_query("select * from player_data where map_id="+Map.current_map.ToString()+";").Rows[0];
-            //player[0] = new Player(1440, 192, Comm.DOWN, player_ani) { figure = new Bitmap(Properties.Resources._fighter2) };
-            //player[0].figure.SetResolution(resolution_value, resolution_value);
-            //player[0].is_active = 1;
-            //player[0].weapon_restriction = 3;
 
             player[0] = new Player(Convert.ToInt32(player_table["pixel_position_x"]), Convert.ToInt32(player_table["pixel_position_y"]), Convert.ToInt32(player_table["face"]), player_ani)
-            { weapon_restriction = Convert.ToInt32(player_table["weapon_restriction"]), figure = new Bitmap(Properties.Resources._fighter2) };
-            player[0].figure.SetResolution(resolution_value, resolution_value);
+            { weapon_restriction = Convert.ToInt32(player_table["weapon_restriction"]), bitmap = new Bitmap(Properties.Resources._fighter2) };
+            player[0].bitmap.SetResolution(resolution_value, resolution_value);
 
             DataTable npc_table = Comm.sql_query("select * from npc_data where map_id=" + Map.current_map.ToString() + ";");
 
@@ -141,38 +145,27 @@ namespace doomsday_scut
                 { map = Map.current_map, idle_walk_direction = Convert.ToInt32(npc_table.Rows[i]["idle_walk_direction"]),idle_walk_time = Convert.ToInt32(npc_table.Rows[i]["idle_walk_time"]),launch_attack_threshold = threshold});
             }
 
-            //npc.Add(new Npc(240, 240, new Bitmap(Properties.Resources._npc2), Comm.ACTIVE_NPC, Comm.DOWN, new Bitmap(Properties.Resources.npc2_attack))
-            //{
-            //    map = 0,
-            //    idle_walk_direction = Comm.LEFT,
-            //    idle_walk_time = 20
-
-            //});
-
-            ////npc.Add(new Npc(600, 240, new Bitmap(Properties.Resources._npc_static_3), Comm.DOWN, Comm.STATIC_NPC, null)
-            ////{
-            ////    map = 0
-            ////});
-
-            //npc.Add(new Npc(192, 240, new Bitmap(Properties.Resources._npc2), Comm.ACTIVE_NPC, Comm.DOWN, new Bitmap(Properties.Resources.npc2_attack))
-            //{
-            //    map = 0,
-            //    idle_walk_direction = Comm.LEFT,
-            //    idle_walk_time = 10
-            //});
-
-            //npc.Add(new Npc(144, 240, new Bitmap(Properties.Resources._npc2), Comm.ACTIVE_NPC, Comm.DOWN, new Bitmap(Properties.Resources.npc2_attack))
-            //{
-            //    map = 0,
-            //    idle_walk_direction = Comm.LEFT,
-            //    idle_walk_time = 30
-            //});
 
         }
 
         private void Game_FormClosing(object sender, FormClosingEventArgs e)
         {
-            Application.Exit();
+            if (!game_running) return;
+            if (MessageBox.Show("Current game states will not be saved!\nAre you sure to exit?", "Exit", MessageBoxButtons.YesNo) == DialogResult.No)
+            {
+                e.Cancel = true;
+            }
+            else
+            {
+                e.Cancel = false;
+            }
+        }
+
+        private void Game_FormClosed(object sender, FormClosedEventArgs e)
+        {
+            //Application.Exit();
+            Dispose();
+            DialogResult = DialogResult.OK;
         }
 
         public void Draw()
@@ -215,26 +208,25 @@ namespace doomsday_scut
         public class Father
         {
             //position
-            //public int map = 0;        //map id
             public int x = 0;
             public int y = 0;
             public int coordinate_x = -1;
             public int coordinate_y = -1;
 
-            ////show
-            //public Bitmap bitmap;
-            //public bool visible = true;
+            //show
+            public Bitmap bitmap;
+            public bool visible = true;
 
             public int face = Comm.DOWN;
-            //public int walk_frame = 0;
-            //public long last_walk_time = 0;
-            //public long walk_interval = 300;
-            //public int speed = Convert.ToInt32(Convert.ToDouble(32 * resolution_rate));
-            //public int idle_walk_direction = Comm.DOWN;
-            //public int idle_walk_time = 0;
-            //public int idle_walk_time_now = 0;
+            public int walk_frame = 0;
+            public long last_walk_time = 0;
+            public long walk_interval = 300;
+            public int speed = Convert.ToInt32(Convert.ToDouble(32 * resolution_rate));
+            public int idle_walk_direction = Comm.DOWN;
+            public int idle_walk_time = 0;
+            public int idle_walk_time_now = 0;
 
-            //public int attack = 10;
+            public int attack = 10;
 
             //animation
             public Animation[] anm;
@@ -304,9 +296,6 @@ namespace doomsday_scut
         public class Player : Father
         {
             //Class of PCC Role
-            public long last_walk_time = 0;         //record last moving time point
-            public long walk_interval = 100;        //set time interval between two steps
-            public int speed = 48;
             public int life = totallife;
             public static int totallife = 150;
             public int bullet_move_interval = 100;
@@ -320,7 +309,6 @@ namespace doomsday_scut
             public int keys_got = 0;
             public int to_next_map = -1;
 
-            public Bitmap figure;                   //figure picture
             public static int current_player = 0;   //current player
             public int is_active = 0;               //current player is active or not
 
@@ -336,18 +324,19 @@ namespace doomsday_scut
 
             public Player(int x,int y,int f,List<Bitmap> animation):base(x,y,f)
             {
+                last_walk_time = 0;         //record last moving time point
+                walk_interval = 100;        //set time interval between two steps
+                speed = 48;
                 anm = new Animation[3];
                 for (int i = 0; i < animation.Count; i++) { anm[i] = new Animation(animation[i]); }
-                figure = new Bitmap(Properties.Resources._fighter2);
-                figure.SetResolution(resolution_value, resolution_value);
+                bitmap = new Bitmap(Properties.Resources._fighter2);
+                bitmap.SetResolution(resolution_value, resolution_value);
             }
             public static Point key_ctrl(Player[] player, Map[] map,List<Npc> npc, List<Bullet> bullet, KeyEventArgs e)
             {
                 Point nullpoint = new Point(-1, -1);
                 Player p = player[current_player];
                 Map m = map[Map.current_map];
-                //change role （由于暂时不用该功能，所以先注释掉）
-                //if (e.KeyCode == Keys.Tab)  {  key_change_player(player);  }
 
                 //change face or not
                 if (e.KeyCode == Keys.Up && p.face != 4) { p.face = 4; }
@@ -391,17 +380,14 @@ namespace doomsday_scut
                 if (next_step_type == '2' && !p.trap_2_slow_down_enable)
                 {
                     p.trap_2_slow_down_enable = true;   //减速buff激活
-                    System.Diagnostics.Debug.Write("trap 2!\n");
                 }
                 if (next_step_type == '3' && !p.trap_3_invalidate_enable)
                 {
                     p.trap_3_invalidate_enable = true;   //去武器buff激活
-                    System.Diagnostics.Debug.Write("trap 3!\n");
                 }
                 if (next_step_type == '5' && !p.trap_3_invalidate_enable)
                 {
-                    p.to_next_map = 6;
-                    System.Diagnostics.Debug.Write("pass!\n");
+                    p.to_next_map = Map.current_map + 1;
                 }
                 for (int i = 0; i < m.clip_in_map.Count; i++)
                 {
@@ -444,8 +430,8 @@ namespace doomsday_scut
                 Player p = player[current_player];
                 if (p.current_anm < 0)
                 {
-                    Rectangle crazycoderRgl = new Rectangle(p.figure.Width / 4 * (p.anm_frame % 4), p.figure.Height / 4 * (p.face - 1), p.figure.Width / 4, p.figure.Height / 4);
-                    Bitmap b0 = p.figure.Clone(crazycoderRgl, p.figure.PixelFormat);
+                    Rectangle crazycoderRgl = new Rectangle(p.bitmap.Width / 4 * (p.anm_frame % 4), p.bitmap.Height / 4 * (p.face - 1), p.bitmap.Width / 4, p.bitmap.Height / 4);
+                    Bitmap b0 = p.bitmap.Clone(crazycoderRgl, p.bitmap.PixelFormat);
                     //draw figure
                     g.DrawImage(b0, map_sx + p.x, map_sy + p.y);
                 }
@@ -461,35 +447,6 @@ namespace doomsday_scut
                     g.FillRectangle(new SolidBrush(Color.Azure), lifebar_position(p.trap_3_time, p.trap_3_time - p.trap_3_count, map_sx + p.x, map_sy + p.y, 5, -25));
             }
 
-            public static void key_change_player(Player[] player)
-            {
-                //this function change the role
-                for (int i = current_player + 1; i < player.Length; i++)
-                {
-                    if (player[i].is_active == 1)
-                    {
-                        set_player(player, current_player, i);
-                        return;
-                    }
-                }
-                for (int i = 0; i < current_player; i++)
-                {
-                    if (player[i].is_active == 1)
-                    {
-                        set_player(player, current_player, i);
-                        return;
-                    }
-                }
-            }
-
-            public static void set_player(Player[] player, int oldindex, int newindex)
-            {
-                current_player = newindex;
-                player[newindex].x = player[oldindex].x;
-                player[newindex].y = player[oldindex].y;
-                player[newindex].face = player[oldindex].face;
-            }
-
             public static void key_ctrl_up(Player[] player, KeyEventArgs e)
             {
                 //this function correct the face of the figure when the key is up
@@ -497,13 +454,6 @@ namespace doomsday_scut
                 //animation frame
                 p.anm_frame = 0;
                 p.last_walk_time = 0;
-            }
-
-            public static void set_position(Player[] player,int x,int y,int face)
-            {
-                player[current_player].x = x;
-                player[current_player].y = y;
-                player[current_player].face = face;
             }
 
             public static Point get_position(Player[] player)
@@ -596,15 +546,9 @@ namespace doomsday_scut
                 mapdata_string = dTable.Rows[0]["data"].ToString();
                 map_width = Convert.ToInt32(dTable.Rows[0]["width"].ToString());
                 map_height = Convert.ToInt32(dTable.Rows[0]["height"].ToString());
-
-                //以下三行为测试通过内存修改来初始化地图，但发现效率提升并不大，故暂时废弃
-                //wallValue = bitmap2byte(wall, true);
-                //roadValue = bitmap2byte(road, true);
-                //bitmap = mapBuild(bmp, mapdata_matrix);
                 bitmap = LoadImage(id);
                 bitmap.SetResolution(resolution_value, resolution_value);
                 key.SetResolution(resolution_value, resolution_value);
-                //initialize_map_item();
             }
 
             public void initialize_map_item()
@@ -625,62 +569,6 @@ namespace doomsday_scut
                 clip_in_map = null;
                 keys_in_map = null;
             }
-
-            public static byte[] bitmap2byte(Bitmap bmp, bool is_unlock)
-            {
-                //lock BMP in RAM
-                Rectangle rect = new Rectangle(0, 0, bmp.Width, bmp.Height);
-                BitmapData bmpData =
-                    bmp.LockBits(rect, ImageLockMode.ReadWrite,
-                    bmp.PixelFormat);
-                // Get the address of the first line.
-                IntPtr ptr = bmpData.Scan0;
-                // Declare an array to hold the bytes of the bitmap.
-                int bytes = Math.Abs(bmpData.Stride) * bmp.Height;
-                byte[] rgbValues = new byte[bytes];
-                // Copy the RGB values into the array.  
-                Marshal.Copy(ptr, rgbValues, 0, bytes);
-                // Unlock the bits.解锁
-                if (is_unlock)
-                    bmp.UnlockBits(bmpData);
-                return rgbValues;
-            }
-
-            public static Bitmap mapBuild(Bitmap bmp, int [,] mapdata_matrix)
-            {
-                Rectangle rect = new Rectangle(0, 0, bmp.Width, bmp.Height);
-                BitmapData bmpData = bmp.LockBits(rect, ImageLockMode.ReadWrite, bmp.PixelFormat);  
-                IntPtr ptr = bmpData.Scan0;  
-                int bytes = Math.Abs(bmpData.Stride) * bmp.Height;
-                byte[] rgbValues = new byte[bytes];  
-                Marshal.Copy(ptr, rgbValues, 0, bytes);
-
-                // copy wall and road to original bmp
-                for (int i = 0; i < rgbValues.Length; i += 4)
-                {
-                    if (mapdata_matrix[((i / 4) / bmp.Width) / 32, ((i / 4) % bmp.Width) / 32] == 0)
-                    {
-                        for (int j = i; j <= i + 3; j++)
-                        {
-                            rgbValues[j] = roadValue[(((i / 4) % bmp.Width) % 32) * road.Width + (((i / 4) / bmp.Width) % 32) + j - i];
-                        }
-                    }
-                    else
-                    {
-                        for (int j = i; j <= i + 3; j++)
-                        {
-                            rgbValues[j] = wallValue[(((i / 4) / bmp.Width) % 32) * wall.Width + (((i / 4) % bmp.Width) % 32) + j - i];
-                        }
-                    }
-                }
-                // Copy the RGB values back to the bitmap 
-                Marshal.Copy(rgbValues, 0, ptr, bytes);
-                // Unlock the bits.  
-                bmp.UnlockBits(bmpData);
-
-                return bmp;
-            }
-
 
             public static void Draw(Map[] map, Player[] player, List<Npc> npc, List<Bullet> bullet,Graphics g, Rectangle stage)
             {
@@ -753,36 +641,17 @@ namespace doomsday_scut
                 }
                 g.DrawString("玩家坐标：" + Convert.ToString(p.coordinate_x) + "," + Convert.ToString(p.coordinate_y), new Font("Arial", 12, FontStyle.Bold), Brushes.White, new PointF(10, 10));
                 g.DrawString("玩家像素坐标：" + Convert.ToString(p.x) + "," + Convert.ToString(p.y), new Font("Arial", 12, FontStyle.Bold), Brushes.White, new PointF(10, 30));
+                g.DrawString("当前关数：" + Convert.ToString(current_map) , new Font("Arial", 12, FontStyle.Bold), Brushes.White, new PointF(10, 50));
                 g.DrawString("子弹：" + Convert.ToString(p.clip_size) + "/" + Convert.ToString(Player.maximum_clip_size), new Font("Arial", 12, FontStyle.Bold), Brushes.White, new PointF(10, 70));
                 g.DrawString("当前武器编号：" + Convert.ToString(p.current_weapon), new Font("Arial", 12, FontStyle.Bold), Brushes.White, new PointF(10, 90));
                 g.DrawString("获得钥匙：" + Convert.ToString(p.keys_got) + "/" + (m.keys_in_map.Count + p.keys_got), new Font("Arial", 12, FontStyle.Bold), Brushes.White, new PointF(10, 110));
-            }
-
-            public static void change_map(Map[] map, Player[] player, Npc[] npc, int newindex, int x, int y, int face)
-            {
-                //unload old map resource
-                if (map[current_map].bitmap!=null)
+                g.DrawString("Press F1 to get help. \nPress F2 to set background music." , new Font("Arial", 12, FontStyle.Bold), Brushes.White, new PointF(600, 10));
+                if(m.mapdata_string[p.coordinate_y * m.map_width + p.coordinate_x] == '5' && m.keys_in_map.Count != 0)
                 {
-                    map[current_map].bitmap = null;
-                }
-                //load new map resource
-                map[newindex].bitmap = new Bitmap(map[newindex].bitmap_path);
-                map[newindex].bitmap.SetResolution(resolution_value, resolution_value);
-                //current_map
-                current_map = newindex;
-                Player.set_position(player, x, y, face);
-
-                //NPC resource
-                for (int i = 0; i < npc.Length; i++)
-                {
-                    if (npc[i] == null)
-                        continue;
-                    if (npc[i].map == current_map)
-                        npc[i].unload();
-                    if (npc[i].map == newindex)
-                        npc[i].load();
+                    g.DrawString("You should get ALL the keys in the map before going to next level!", new Font("Arial", 12, FontStyle.Bold), Brushes.White, new PointF(10, 600));
                 }
             }
+
             public static bool can_through(Map[] map,int x,int y)
             {
                 Map m = map[current_map];
@@ -943,21 +812,11 @@ namespace doomsday_scut
             public Random r = new Random(Guid.NewGuid().GetHashCode());
             //show
             public string bitmap_path = "";
-            public Bitmap bitmap;
-            public bool visible = true;
 
-            public int walk_frame = 0;
-            public long last_walk_time = 0;
-            public long walk_interval = 300;
             public long last_attack_time = 0;
             public long attack_interval = 500;
-            public int speed = Convert.ToInt32(Convert.ToDouble(32 * resolution_rate));
-            public int idle_walk_direction = Comm.LEFT;
-            public int idle_walk_time = 0;
-            public int idle_walk_time_now = 0;
             public static int totallife = 150;
             public int life = 150;
-            public int attack = 10;
             public bool launch_attack = false;
             public int launch_attack_threshold = 1;
 
@@ -969,22 +828,6 @@ namespace doomsday_scut
                 anm = new Animation[1];
                 anm[0] = new Animation(animation);
                 bitmap.SetResolution(resolution_value, resolution_value);
-            }
-
-            public void load()
-            {
-                MessageBox.Show("npcload!");
-                if (bitmap_path != "")
-                {
-                    bitmap = new Bitmap(bitmap_path);
-                    
-                }
-            }
-
-            public void unload()
-            {
-                if (bitmap != null)
-                    bitmap = null;
             }
 
             public void draw(Graphics g, Player[] player, int map_sx, int map_sy)
@@ -1079,20 +922,6 @@ namespace doomsday_scut
                 if (!launch_attack && idle_walk_time != 0)
                 {
                     int direction;
-                    //if (0 <= idle_walk_time_now && idle_walk_time_now < idle_walk_time / 2)
-                    //    direction = Comm.RIGHT;
-                    //else if (idle_walk_time / 2 <= idle_walk_time_now && idle_walk_time_now < idle_walk_time)
-                    //    direction = Comm.DOWN;
-                    //else if ((-idle_walk_time) / 2 <= idle_walk_time_now && idle_walk_time_now < 0)
-                    //    direction = Comm.UP;
-                    //else 
-                    //    direction = Comm.LEFT;
-                    //if (0 <= idle_walk_time_now && idle_walk_time_now < idle_walk_time)
-                    //    direction = Comm.DOWN;
-                    //else if (-idle_walk_time <= idle_walk_time_now && idle_walk_time_now < 0)
-                    //    direction = Comm.UP;
-                    //else
-                    //    direction = Comm.UP;
                     if (idle_walk_time_now >= 0)
                         direction = idle_walk_direction;
                     else
@@ -1141,16 +970,13 @@ namespace doomsday_scut
 
         public class Bullet : Father
         {
-            public int attack;              //单个子弹攻击力值
-
             public bool disabled = false;   //若子弹撞墙了就把这里设为true，画图遍历时直接销毁这个对象
             public int move_interval = 300;
             public long last_move_time = 0;
-            public int speed = Convert.ToInt32(Convert.ToDouble(32 * resolution_rate));
-            public Bitmap bitmap = Properties.Resources.bullet;
 
             public Bullet(int x,int y,int attack,int face):base(x,y,face)
             {
+                bitmap = Properties.Resources.bullet;
                 this.attack = attack;
                 if (face == Comm.LEFT)
                     bitmap.RotateFlip(RotateFlipType.Rotate180FlipY);
@@ -1265,9 +1091,7 @@ namespace doomsday_scut
         }
 
         public class Item : Father
-        {
-            public bool visible;
-            
+        {           
             public Item(Point pixel_p, bool v):base(pixel_p.X,pixel_p.Y,Comm.NO_DIRECTION)
             {
                 visible = v;
@@ -1344,7 +1168,7 @@ namespace doomsday_scut
 
         private void timer1_Tick(object sender, EventArgs e)
         {
-
+            
             for (int i = 0; i < npc.Count; i++)
             {
                 if (npc[i] == null)
@@ -1360,7 +1184,29 @@ namespace doomsday_scut
             if (m.keys_in_map.Count != 0) p.to_next_map = -1;
             if (p.to_next_map >= 0 && m.keys_in_map.Count == 0)
             {
-                level_goto(p.to_next_map, "Level " + Map.current_map + ": Completed!", m, "Next level: Level " + p.to_next_map);
+                timer1.Stop();
+                TimeSpan t = DateTime.Now - this_level_datetime;
+                if (p.to_next_map < 10 && Comm.sql_query("select * from profile where level_id=" + p.to_next_map.ToString()).Rows[0]["time"] is DBNull)
+                {
+                    Comm.sql_update("update profile set time='0' where level_id=" + p.to_next_map.ToString());
+                }
+                string latest_passing_time = Comm.sql_query("select * from profile where level_id=" + Map.current_map.ToString()).Rows[0]["time"].ToString();
+                if (latest_passing_time.ToString() != "0")
+                {
+                    Comm.sql_update("update profile set time='" + Math.Min(Convert.ToInt64(t.TotalMilliseconds), Convert.ToInt64(latest_passing_time)) + "' where level_id=" + Map.current_map.ToString());
+                }
+                else
+                {
+                    Comm.sql_update("update profile set time='" + Convert.ToInt64(t.TotalMilliseconds).ToString() + "' where level_id=" + Map.current_map.ToString());
+                }
+
+                if (p.to_next_map > 8)
+                {
+                    p.to_next_map = 0;
+                    level_goto(p.to_next_map, t, "All level completed!", m, " ", 5);
+                }
+                else
+                    level_goto(p.to_next_map, t, "Level " + Map.current_map + ": Completed!", m, "Next level: Level " + (p.to_next_map + 1));
             }
             #endregion
 
@@ -1375,7 +1221,8 @@ namespace doomsday_scut
                     npc[i].last_attack_time = Comm.Time();
                     if (p.life <= 0)
                     {
-                        level_goto(Map.current_map, "Game Over!");
+                        TimeSpan t = DateTime.Now - this_level_datetime;
+                        level_goto(Map.current_map, t,"Game Over!");
                     }
                 }
             }
@@ -1387,7 +1234,7 @@ namespace doomsday_scut
                 npc_died_logic(npc[i],m,p);
             }
             #endregion
-
+            
         }
 
         private void npc_died_logic(Npc npc,Map m, Player p)
@@ -1410,34 +1257,36 @@ namespace doomsday_scut
             }
         }
 
-        private void level_goto(int level,string info = "", Map m = null, string next_level_info = "")
+        private void level_goto(int level, TimeSpan t = new TimeSpan(),string info = "", Map m = null, string next_level_info = "", int stoptime = 3)
         {
             timer1.Stop();
             timer_bullet.Stop();
+            game_running = false;
             if (info.Length != 0)
-                new level_info(3, DateTime.Now - this_level_datetime, info, next_level_info).ShowDialog();
-                //MessageBox.Show(info);
+            {
+                if (new level_info(stoptime, t, info, next_level_info).ShowDialog() == DialogResult.OK)
+                {
+                    Close();
+                }
+            }
             if (m != null)
                 m.dispose_map_item();
+            if (Map.current_map != level)
+            {
+                map[level] = new Map(level);
+                map[Map.current_map] = null;
+            }
             Map.current_map = level;
             initialize_game();
             this_level_datetime = DateTime.Now;
+            game_running = true;
             timer1.Start();
             timer_bullet.Start();
         }
 
         private void button2_Click(object sender, EventArgs e)
         {
-            label3.Text = "processing...";
-            string path = @System.AppDomain.CurrentDomain.BaseDirectory + @"data.db";
-            SQLiteConnection cn = new SQLiteConnection("data source=" + path);
-            cn.Open();
-            SQLiteCommand cmd = new SQLiteCommand("select data from map_data where map_id = " + Convert.ToString(Map.current_map) + ";", cn);
-            cmd.CommandType = CommandType.Text;
-            SQLiteDataReader dReader = cmd.ExecuteReader();
-            DataTable dTable = new DataTable();
-            dTable.Load(dReader);
-            string target = dTable.Rows[0]["data"].ToString();
+            string target = map[Map.current_map].mapdata_string;
 
             int[] t = new int[target.Length];
             for (int i = 0; i < t.Length; i++)
@@ -1450,18 +1299,32 @@ namespace doomsday_scut
             {
                 ans += t[i].ToString();
             }
+            map[Map.current_map].mapdata_string = ans;
+        }
 
+        private void textBox1_KeyPress(object sender, KeyPressEventArgs e)
+        {
+            if (!char.IsNumber(e.KeyChar) && e.KeyChar != (char)8)
+            {
+                e.Handled = true;
+            }
+        }
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+            string ans = map[Map.current_map].mapdata_string;
+            string path = @System.AppDomain.CurrentDomain.BaseDirectory + @"data.db";
+            SQLiteConnection cn = new SQLiteConnection("data source=" + path);
+            cn.Open();
             SQLiteCommand cmd1 = cn.CreateCommand();
-            cmd1.CommandText = string.Format("UPDATE map_data SET data = '"+ ans +"',map_image_data = (@0) WHERE map_id = " + Convert.ToString(Map.current_map) + ";");
+            cmd1.CommandText = string.Format("UPDATE map_data SET data = '" + ans + "',map_image_data = (@0) WHERE map_id = " + Convert.ToString(Map.current_map) + ";");
             SQLiteParameter param = new SQLiteParameter("@0", System.Data.DbType.Binary);
 
             param.Value = Map.ImageToByte(Map.string2bitmap(ans, map[Map.current_map].map_width, map[Map.current_map].map_height), System.Drawing.Imaging.ImageFormat.Png);
             cmd1.Parameters.Add(param);
             cmd1.ExecuteNonQuery();
-
             cn.Close();
             label3.Text = "Done!";
         }
-
     }
 }

@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.Drawing;
 using System.Data;
 using System.Data.SQLite;
+using System.Windows.Forms;
 
 namespace doomsday_scut
 {
@@ -74,19 +75,40 @@ namespace doomsday_scut
             }
         }
 
+
         public static DataTable sql_query(string command)
         {
             string path = @System.AppDomain.CurrentDomain.BaseDirectory + @"data.db";
-            SQLiteConnection cn = new SQLiteConnection("data source=" + path);
+            SQLiteConnection cn = new SQLiteConnection("data source=" + path );
             cn.Open();
-            SQLiteCommand cmd = new SQLiteCommand(command, cn);
-            cmd.CommandType = CommandType.Text;
+            SQLiteCommand cmd = new SQLiteCommand(command, cn) { CommandType = CommandType.Text };
             SQLiteDataReader dReader = cmd.ExecuteReader();
             DataTable dTable = new DataTable();
             dTable.Load(dReader);
             cn.Close();
             return dTable;
         }
+
+        public static void sql_update(string command)
+        {
+            string path = @System.AppDomain.CurrentDomain.BaseDirectory + @"data.db";
+            SQLiteConnection cn = new SQLiteConnection("data source=" + path );
+            cn.Open();
+            SQLiteCommand cmd = new SQLiteCommand(command, cn) { CommandType = CommandType.Text };
+            try
+            {
+                cmd.ExecuteNonQuery();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Update error: " + ex.Message + "\n" + command, "SQL Update Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            finally
+            {
+                cn.Close();
+            }
+        }
+
         public static int get_distance_square(Point p1,Point p2)
         {
             return Convert.ToInt32(Math.Pow(p1.X - p2.X, 2) + Math.Pow(p1.Y - p2.Y, 2));
