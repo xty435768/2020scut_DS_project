@@ -56,7 +56,6 @@
             // timer_bullet
             // 
             this.timer_bullet.Enabled = true;
-            this.timer_bullet.Interval = 50;
             this.timer_bullet.Tick += new System.EventHandler(this.timer_bullet_Tick);
             // 
             // button2
@@ -175,7 +174,7 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(1205, 938);
+            this.ClientSize = new System.Drawing.Size(1198, 800);
             this.Controls.Add(this.button1);
             this.Controls.Add(this.axWindowsMediaPlayer1);
             this.Controls.Add(this.textBox1);
@@ -186,8 +185,10 @@
             this.Controls.Add(this.x_textbox);
             this.Controls.Add(this.button2);
             this.Controls.Add(this.pictureBox1);
+            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
             this.KeyPreview = true;
             this.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
+            this.MaximizeBox = false;
             this.Name = "Game";
             this.Text = "Game";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.Game_FormClosing);

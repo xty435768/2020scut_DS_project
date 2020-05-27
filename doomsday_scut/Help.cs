@@ -24,7 +24,7 @@ namespace doomsday_scut
 
         private void Help_Load(object sender, EventArgs e)
         {
-            webBrowser1.DocumentText = "<p align=\"center\"><strong>Level 1 Tutorial</strong></p><p> Welcome to Doomsday in SCUT!</ p > ";
+            webBrowser1.Url = new Uri("http://47.112.102.169/raider/help.html");
         }
     }
 }

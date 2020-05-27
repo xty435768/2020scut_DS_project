@@ -30,7 +30,7 @@ namespace doomsday_scut
 
         private void help_about_Click(object sender, EventArgs e)
         {
-            using (Help h = new Help())
+            using (About h = new About())
             {
                 h.ShowDialog();
             }
